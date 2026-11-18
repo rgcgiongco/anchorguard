@@ -22,12 +22,12 @@ class DeviceAdminInstrumentedTest {
     private val adminComponent = ComponentName(context, AnchorGuardDeviceAdminReceiver::class.java)
 
     @Test
-    fun `device admin receiver class is not null`() {
+    fun `deviceAdminReceiverClassIsNotNull`() {
         assertNotNull(AnchorGuardDeviceAdminReceiver::class.java)
     }
 
     @Test
-    fun `admin component name is constructed correctly`() {
+    fun `adminComponentNameIsConstructedCorrectly`() {
         assertEquals("com.anchorguard.client", adminComponent.packageName)
         assertEquals(
             "com.anchorguard.client.enforcement.AnchorGuardDeviceAdminReceiver",
@@ -36,7 +36,7 @@ class DeviceAdminInstrumentedTest {
     }
 
     @Test
-    fun `onDisableRequested returns CharSequence message`() {
+    fun `onDisableRequestedReturnsCharSequenceMessage`() {
         val result = AnchorGuardDeviceAdminReceiver::class.java.getDeclaredMethod(
             "onDisableRequested",
             Context::class.java,
@@ -46,7 +46,7 @@ class DeviceAdminInstrumentedTest {
     }
 
     @Test
-    fun `pin manager integrates with device admin receiver`() {
+    fun `pinManagerIntegratesWithDeviceAdminReceiver`() {
         val manager = PinSecurityManager(context)
         // Verify PinSecurityManager can be instantiated (used by DeviceAdminReceiver)
         assertNotNull(manager)
@@ -54,14 +54,14 @@ class DeviceAdminInstrumentedTest {
     }
 
     @Test
-    fun `device admin active state is readable`() {
+    fun `deviceAdminActiveStateIsReadable`() {
         val isActive = dpm.isAdminActive(adminComponent)
         // May be false on test device if not activated; just verify no crash
         assertTrue(isActive || !isActive)
     }
 
     @Test
-    fun `anchorguard device admin receiver constants exist`() {
+    fun `anchorguardDeviceAdminReceiverConstantsExist`() {
         assertEquals(
             "com.anchorguard.client.extra.ADMIN_VERIFY_REASON",
             AnchorGuardDeviceAdminReceiver.EXTRA_ADMIN_VERIFY_REASON

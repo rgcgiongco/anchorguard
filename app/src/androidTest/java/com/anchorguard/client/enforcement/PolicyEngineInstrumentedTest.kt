@@ -9,6 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.anchorguard.client.auth.security.PinSecurityManager
 
 @RunWith(AndroidJUnit4::class)
 class PolicyEngineInstrumentedTest {
@@ -16,7 +17,7 @@ class PolicyEngineInstrumentedTest {
     private val context: Context = ApplicationProvider.getApplicationContext<Application>()
 
     @Test
-    fun `isAllowed returns true for own package`() {
+    fun `isAllowedReturnsTrueForOwnPackage`() {
         val engine = PolicyEngine(context)
 
         val allowed = engine.isAllowed("com.anchorguard.client")
@@ -25,7 +26,7 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `isAllowed returns true for systemui`() {
+    fun `isAllowedReturnsTrueForSystemui`() {
         val engine = PolicyEngine(context)
 
         val allowed = engine.isAllowed("com.android.systemui")
@@ -34,7 +35,7 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `isAllowed returns true for blocked package in parent mode`() {
+    fun `isAllowedReturnsTrueForBlockedPackageInParentMode`() {
         val engine = PolicyEngine(context)
         engine.setBlockedPackages(setOf("com.android.chrome"))
         engine.setParentMode(true)
@@ -45,7 +46,7 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `isAllowed returns false for blocked package outside parent mode`() {
+    fun `isAllowedReturnsFalseForBlockedPackageOutsideParentMode`() {
         val engine = PolicyEngine(context)
         engine.setBlockedPackages(setOf("com.android.chrome"))
         engine.setParentMode(false)
@@ -56,7 +57,7 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `isAllowed returns true for non-blocked package`() {
+    fun `isAllowedReturnsTrueForNonBlockedPackage`() {
         val engine = PolicyEngine(context)
         engine.setBlockedPackages(setOf("com.android.chrome"))
         engine.setParentMode(false)
@@ -67,7 +68,7 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `setBlockedPackages and blockedPackages round-trip`() {
+    fun `setBlockedPackagesAndBlockedPackagesRoundTrip`() {
         val engine = PolicyEngine(context)
         engine.setBlockedPackages(setOf("pkg-a", "pkg-b"))
 
@@ -79,7 +80,7 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `setParentMode and isParentMode round-trip`() {
+    fun `setParentModeAndIsParentModeRoundTrip`() {
         val engine = PolicyEngine(context)
 
         engine.setParentMode(true)
@@ -90,14 +91,14 @@ class PolicyEngineInstrumentedTest {
     }
 
     @Test
-    fun `blockIntervalMs default is 500ms`() {
+    fun `blockIntervalMsDefaultIs500ms`() {
         val engine = PolicyEngine(context)
 
         assertEquals(500L, engine.blockIntervalMs())
     }
 
     @Test
-    fun `setBlockIntervalMs enforces minimum`() {
+    fun `setBlockIntervalMsEnforcesMinimum`() {
         val engine = PolicyEngine(context)
         engine.setBlockIntervalMs(50L)
 
