@@ -25,3 +25,7 @@
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 -dontwarn javax.annotation.**
+
+# Tink crypto library (used by AndroidX Security EncryptedSharedPreferences)
+-keep class com.google.crypto.tink.** { *; }
+-keep class com.google.errorprone.annotations.** { *; }
