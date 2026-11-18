@@ -19,7 +19,7 @@ class PairingFlowInstrumentedTest {
     }
 
     @Test
-    fun `PairingScreen composes without crashing`() {
+    fun `pairingScreenComposesWithoutCrashing`() {
         composeRule.setContent {
             PairingScreen(
                 onPaired = { /* navigation handled by host */ },
@@ -29,7 +29,7 @@ class PairingFlowInstrumentedTest {
     }
 
     @Test
-    fun `PairingScreen shows pairing code input field`() {
+    fun `pairingScreenShowsPairingCodeInputField`() {
         composeRule.setContent {
             PairingScreen(
                 onPaired = { },

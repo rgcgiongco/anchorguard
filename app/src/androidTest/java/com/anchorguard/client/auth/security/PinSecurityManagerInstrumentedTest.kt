@@ -17,7 +17,7 @@ class PinSecurityManagerInstrumentedTest {
     private val context: Context = ApplicationProvider.getApplicationContext<Application>()
 
     @Test
-    fun `createPin stores hash and marks setup complete`() {
+    fun `createPinStoresHashAndMarksSetupComplete`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
 
@@ -29,7 +29,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `createPin rejects short pin`() {
+    fun `createPinRejectsShortPin`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
 
@@ -40,7 +40,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `createPin rejects non-digit pin`() {
+    fun `createPinRejectsNonDigitPin`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
 
@@ -51,7 +51,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `verifyPin returns Success for correct pin`() {
+    fun `verifyPinReturnsSuccessForCorrectPin`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
         manager.createPin("4321")
@@ -62,7 +62,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `verifyPin returns Failure for wrong pin`() {
+    fun `verifyPinReturnsFailureForWrongPin`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
         manager.createPin("4321")
@@ -73,7 +73,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `verifyPin returns NotSet when no pin configured`() {
+    fun `verifyPinReturnsNotSetWhenNoPinConfigured`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
 
@@ -83,7 +83,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `changePin updates stored hash`() {
+    fun `changePinUpdatesStoredHash`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
         manager.createPin("1111")
@@ -96,7 +96,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `changePin rejects wrong old pin`() {
+    fun `changePinRejectsWrongOldPin`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
         manager.createPin("1111")
@@ -107,7 +107,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `recordFailure triggers lockout after max attempts`() {
+    fun `recordFailureTriggersLockoutAfterMaxAttempts`() {
         val manager = PinSecurityManager(context)
         manager.clearPinState()
         manager.createPin("1111")
@@ -123,7 +123,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `setParentSessionValid and isParentSessionValid`() {
+    fun `setParentSessionValidAndIsParentSessionValid`() {
         val manager = PinSecurityManager(context)
         manager.clearParentSession()
 
@@ -135,7 +135,7 @@ class PinSecurityManagerInstrumentedTest {
     }
 
     @Test
-    fun `pinManager is not null`() {
+    fun `pinManagerIsNotNull`() {
         val manager = PinSecurityManager(context)
         assertNotNull(manager)
     }
