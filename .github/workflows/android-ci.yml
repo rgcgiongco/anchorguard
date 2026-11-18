@@ -72,26 +72,30 @@ jobs:
 
       - name: Install Android emulator components
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
           yes | sdkmanager --licenses
           sdkmanager --install "system-images;android-34;google_apis;x86_64" "emulator" "platform-tools"
 
       - name: Create emulator
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          # Find cmdline-tools bin directory (setup-android may install at cmdline-tools/bin or cmdline-tools/latest/bin)
+          CMDLINE_TOOLS_BIN=$(find $ANDROID_HOME -path "*/cmdline-tools*/bin/avdmanager" -type f 2>/dev/null | head -1 | xargs dirname)
+          echo "Found avdmanager at: $CMDLINE_TOOLS_BIN"
+          echo "$CMDLINE_TOOLS_BIN" >> $GITHUB_PATH
           echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-          which avdmanager || echo "avdmanager not found"
-          echo "no" | avdmanager create avd -n anchorguard-test-avd -k "system-images;android-34;google_apis;x86_64" -g google_apis --device "pixel_6" || echo "avd create failed"
-          avdmanager list avd || echo "avd list failed"
+          which avdmanager
+          echo "no" | avdmanager create avd -n anchorguard-test-avd -k "system-images;android-34;google_apis;x86_64" -g google_apis --device "pixel_6"
+          avdmanager list avd
 
       - name: Start emulator
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
+          # Find emulator binary
+          EMULATOR_BIN=$(find $ANDROID_HOME -name emulator -type f 2>/dev/null | head -1)
+          echo "Found emulator at: $EMULATOR_BIN"
+          EMULATOR_DIR=$(dirname $EMULATOR_BIN)
+          echo "$EMULATOR_DIR" >> $GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          which emulator
           emulator -avd anchorguard-test-avd -no-snapshot -no-window -gpu swiftshader_indirect -audio-off &
           adb wait-for-device
           adb shell 'while [[ -z $(getprop sys.boot_completed | tr -d '\r') ]]; do sleep 1; done; input keyevent 82'
