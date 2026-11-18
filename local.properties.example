@@ -1,0 +1,8 @@
+# Copy to local.properties (gitignored) for local Android release signing.
+# Do NOT commit local.properties or keystore files.
+# Alternatively set ANCHORGUARD_KEYSTORE_* environment variables in CI/shell.
+sdk.dir=/path/to/Android/Sdk
+ANCHORGUARD_KEYSTORE_FILE=/absolute/path/to/anchorguard-release.jks
+ANCHORGUARD_KEYSTORE_PASSWORD=change-me
+ANCHORGUARD_KEY_ALIAS=anchorguard
+ANCHORGUARD_KEY_PASSWORD=change-me

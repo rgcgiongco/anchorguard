@@ -1,0 +1,43 @@
+:root {
+  /* AnchorGuard design tokens (Module 09) */
+  --ag-primary: #2E6F8E;
+  --ag-primary-dark: #1A4A5F;
+  --ag-secondary: #4CAF7A;
+  --ag-danger: #C0504D;
+  --ag-warning: #D9A441;
+  --ag-surface: #FFFFFF;
+  --ag-surface-alt: #F7F9FB;
+  --ag-surface-variant: #E8EEF3;
+  --ag-on-primary: #FFFFFF;
+  --ag-on-surface: #1C2530;
+  --ag-on-surface-variant: #5B6B7C;
+  --ag-outline: #B9C4CE;
+  --ag-success: #3E8E5A;
+  --ag-error: #C0504D;
+
+  --ag-font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ag-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --ag-radius-sm: 4px;
+  --ag-radius-md: 8px;
+  --ag-radius-lg: 12px;
+
+  --ag-elevation-1: 0 1px 2px rgba(28,37,48,0.08);
+  --ag-elevation-2: 0 4px 12px rgba(28,37,48,0.10);
+  --ag-elevation-3: 0 8px 24px rgba(28,37,48,0.12);
+
+  --ag-max-width: 1100px;
+  --ag-header-height: 64px;
+  --ag-sidebar-width: 240px;
+
+  /* Backward-compatible aliases */
+  --ag-teal: var(--ag-primary);
+  --ag-teal-dark: var(--ag-primary-dark);
+  --ag-teal-light: #5A9AB8;
+  --ag-bg: var(--ag-surface-alt);
+  --ag-text: var(--ag-on-surface);
+  --ag-muted: var(--ag-on-surface-variant);
+  --ag-border: var(--ag-outline);
+  --ag-radius: var(--ag-radius-lg);
+  --ag-shadow: var(--ag-elevation-3);
+}

@@ -1,0 +1,102 @@
+name: Android CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANCHORGUARD_KEYSTORE_FILE: ${{ github.workspace }}/anchorguard-release.jks
+      ANCHORGUARD_KEYSTORE_PASSWORD: ${{ secrets.ANCHORGUARD_KEYSTORE_PASSWORD }}
+      ANCHORGUARD_KEY_ALIAS: ${{ secrets.ANCHORGUARD_KEY_ALIAS }}
+      ANCHORGUARD_KEY_PASSWORD: ${{ secrets.ANCHORGUARD_KEY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare release keystore (if configured)
+        if: ${{ secrets.ANCHORGUARD_KEYSTORE_BASE64 != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$ANCHORGUARD_KEYSTORE_BASE64" | base64 --decode > "$ANCHORGUARD_KEYSTORE_FILE"
+        env:
+          ANCHORGUARD_KEYSTORE_BASE64: ${{ secrets.ANCHORGUARD_KEYSTORE_BASE64 }}
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Assemble release APK
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Package release artifact and checksums
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/package-release-apk.sh scripts/verify-apk-checksum.sh
+          scripts/package-release-apk.sh "$GITHUB_WORKSPACE"
+          APK_PATH="$(ls -1 "$GITHUB_WORKSPACE/app/release"/AnchorGuard-v*-release.apk | head -n1)"
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "apk_name=$(basename "$APK_PATH")" >> "$GITHUB_OUTPUT"
+          scripts/verify-apk-checksum.sh "$APK_PATH"
+
+      - name: Instrumented tests (emulator)
+        run: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+        env:
+          ADB_INSTALL_TIMEOUT: 120
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: app/build/reports/androidTests/connected/
+
+      - name: Upload APK and checksums artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: anchorguard-android-release
+          if-no-files-found: error
+          path: |
+            app/release/AnchorGuard-v*-release.apk
+            app/release/AnchorGuard-v*-release.apk.sha256
+            app/release/AnchorGuard-v*-release.apk.sha512
+
+      - name: Upload to GitHub Release
+        if: ${{ github.event_name == 'release' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/release/AnchorGuard-v*-release.apk
+            app/release/AnchorGuard-v*-release.apk.sha256
+            app/release/AnchorGuard-v*-release.apk.sha512

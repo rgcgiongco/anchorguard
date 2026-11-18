@@ -1,0 +1,53 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: anchorguard-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/anchorguard}
+    username: ${SPRING_DATASOURCE_USERNAME:anchorguard}
+    password: ${SPRING_DATASOURCE_PASSWORD:anchorguard}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /
+      path-mapping:
+        health: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+anchorguard:
+  security:
+    jwt-secret: ${ANCHORGUARD_JWT_SECRET:change-me-in-production-min-32-bytes-secret-key!!}
+    access-token-minutes: ${ANCHORGUARD_ACCESS_TOKEN_MINUTES:15}
+    refresh-token-days: ${ANCHORGUARD_REFRESH_TOKEN_DAYS:7}
+    pairing-code-minutes: ${ANCHORGUARD_PAIRING_CODE_MINUTES:15}
+  cors:
+    allowed-origins: ${ANCHORGUARD_CORS_ORIGINS:https://app.anchorguard.com}
+
+springdoc:
+  api-docs:
+    path: /v1/docs/openapi
+  swagger-ui:
+    path: /v1/docs
+    operations-sorter: alpha

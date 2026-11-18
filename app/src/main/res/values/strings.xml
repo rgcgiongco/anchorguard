@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">AnchorGuard</string>
+
+    <string name="enforcement_channel_name">AnchorGuard Protection</string>
+    <string name="enforcement_channel_description">Keeps device protection active while AnchorGuard is running.</string>
+    <string name="enforcement_notification_title">AnchorGuard protection active</string>
+    <string name="enforcement_notification_text">Monitoring app usage according to device policy.</string>
+
+    <string name="overlay_blocked_title">App blocked by AnchorGuard</string>
+    <string name="overlay_blocked_app_default">This app is not available right now.</string>
+    <string name="overlay_unlock_parent">Parent access</string>
+    <string name="blocked_app_icon">Blocked app icon</string>
+
+    <string name="device_admin_label">AnchorGuard Device Admin</string>
+    <string name="device_admin_description">Allows AnchorGuard to help protect this device and prevent unauthorized removal when enabled.</string>
+    <string name="accessibility_service_label">AnchorGuard Protection Service</string>
+    <string name="accessibility_service_description">Helps AnchorGuard detect app changes for policy enforcement when enabled.</string>
+</resources>

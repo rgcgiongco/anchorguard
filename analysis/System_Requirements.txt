@@ -1,0 +1,379 @@
+AnchorGuard Backend System Requirements by Device Scale
+========================================================
+Based on Kids Place (Kiddoware) architecture analysis v3.10.15
+Analysis date: 2026-11-17
+
+================================================================================
+ARCHITECTURE OVERVIEW
+================================================================================
+
+Core Backend Components Required:
+1. Auth & User Management          - Firebase Auth equivalent (email/phone/OIDC)
+2. Device Registry & Sync          - Firestore equivalent (real-time sync)
+3. Push Notifications (FCM)        - FCM/APNs gateway + topic management
+4. Remote Config / Feature Flags   - Firebase Remote Config equivalent
+5. Analytics & Crash Reporting     - Firebase Analytics + Crashlytics equivalent
+6. File/Asset Storage              - Firebase Storage / S3 equivalent (wallpapers, Lottie)
+7. Custom API (REST + gRPC)        - Device config, licensing, reporting, key exchange
+8. DNS Safe-Browsing Proxy         - DNS-over-HTTPS/TLS filter (kpsbproxy equivalent)
+9. Licensing / Billing             - Play Billing + custom license validation
+10. CDN                            - Static assets (images, animations, webp)
+
+================================================================================
+PER-DEVICE RESOURCE ESTIMATES (Baseline from Kids Place v3.10.15)
+================================================================================
+
+Average per active device per month:
+- API requests:           ~2,500 req/month (config sync, reporting, licensing, FCM tokens)
+- Firestore reads:        ~500 reads/month (device config, user profiles, categories)
+- Firestore writes:       ~200 writes/month (usage logs, app launches, session records)
+- FCM messages:           ~50 messages/month (remote lock, config push, sound alerts)
+- DNS queries (filtered): ~15,000 queries/month (if safe browsing enabled)
+- Storage bandwidth:      ~5 MB/month (wallpapers, icons, Lottie animations)
+- Crash/analytics events: ~100 events/month
+
+Peak multipliers (back-to-school, holidays): 3-5x baseline
+
+================================================================================
+SYSTEM REQUIREMENTS BY SCALE
+================================================================================
+
+--------------------------------------------------------------------------------
+TIER 1: 100 DEVICES (Pilot / Early Beta)
+--------------------------------------------------------------------------------
+Architecture: Single VM (4 vCPU, 16 GB RAM) + Managed Services
+
+Compute:
+  - API Server (Node.js/Go):        2 vCPU, 4 GB RAM
+  - gRPC Gateway:                   1 vCPU, 2 GB RAM
+  - DNS Proxy (dnsjava/Go):         1 vCPU, 2 GB RAM
+  - Background Workers:             1 vCPU, 2 GB RAM
+  - Total dedicated:                5 vCPU, 10 GB RAM
+
+Managed Services (recommended):
+  - PostgreSQL (Primary DB):        db.t3.micro (2 vCPU, 4 GB) - RDS/Cloud SQL
+  - Redis (Cache/Sessions):         cache.t3.micro (1 vCPU, 3 GB) - ElastiCache
+  - Object Storage (S3/R2):         Standard tier, ~50 GB
+  - Push Gateway:                   Firebase FCM (free tier) or ntfy/UnifiedPush self-hosted
+  - CDN:                            Cloudflare R2 + Workers (free tier sufficient)
+
+Monthly Estimated Cost (AWS/GCP/Azure):
+  - Compute (VM):                    $35-50
+  - Managed DB + Redis:              $25-40
+  - Storage + CDN:                   $5-10
+  - Push (Firebase):                 Free (100 devices well within limits)
+  - DNS Proxy egress:                $2-5
+  - TOTAL:                           ~$70-110/month
+
+Monitoring: Prometheus + Grafana (self-hosted on same VM) or Datadog free tier
+
+--------------------------------------------------------------------------------
+TIER 2: 200-300 DEVICES (Private Beta / Small Launch)
+--------------------------------------------------------------------------------
+Architecture: Single VM (8 vCPU, 32 GB RAM) + Managed Services
+
+Compute:
+  - API Server (2 replicas):        4 vCPU, 8 GB RAM
+  - gRPC Gateway (2 replicas):      2 vCPU, 4 GB RAM
+  - DNS Proxy (2 replicas):         2 vCPU, 4 GB RAM
+  - Background Workers (2):         2 vCPU, 4 GB RAM
+  - Total dedicated:                10 vCPU, 20 GB RAM
+
+Managed Services:
+  - PostgreSQL:                     db.t3.small (2 vCPU, 8 GB) - Multi-AZ
+  - Redis:                          cache.t3.small (2 vCPU, 6 GB) - Cluster mode
+  - Object Storage:                 ~200 GB
+  - CDN:                            Cloudflare (free tier OK)
+  - Push:                           Firebase FCM (free)
+
+Monthly Estimated Cost:
+  - Compute:                        $70-100
+  - Managed DB + Redis:             $50-80
+  - Storage + CDN:                  $10-20
+  - Push + DNS egress:              $5-15
+  - TOTAL:                          ~$140-215/month
+
+--------------------------------------------------------------------------------
+TIER 3: 1,000 DEVICES (Public Launch)
+--------------------------------------------------------------------------------
+Architecture: Kubernetes (managed) + Managed Services
+
+Kubernetes (EKS/GKE/AKS) - 3 node pool:
+  - General pool:                   3x t3.medium (2 vCPU, 4 GB) = 6 vCPU, 12 GB
+  - DNS Proxy pool:                 2x t3.medium (2 vCPU, 4 GB) = 4 vCPU, 8 GB
+  - Worker pool:                    2x t3.medium (2 vCPU, 4 GB) = 4 vCPU, 8 GB
+  - Total:                          14 vCPU, 28 GB RAM
+
+Managed Services:
+  - PostgreSQL:                     db.t3.medium (2 vCPU, 16 GB) - Multi-AZ, read replica
+  - Redis:                          cache.r6g.large (2 vCPU, 13 GB) - Cluster
+  - Object Storage:                 ~1 TB
+  - CDN:                            Cloudflare Pro ($20) or CloudFront
+  - Push:                           Firebase FCM (free tier covers 1K easily)
+  - Load Balancer:                  ALB/NLB ($18 + LCU)
+
+Monthly Estimated Cost:
+  - Kubernetes (nodes):             $180-250
+  - Managed DB + Redis:             $120-180
+  - Storage + CDN:                  $40-80
+  - Load Balancer + DNS egress:     $30-60
+  - TOTAL:                          ~$370-570/month
+
+--------------------------------------------------------------------------------
+TIER 4: 2,000-3,000 DEVICES (Growth Phase)
+--------------------------------------------------------------------------------
+Architecture: Kubernetes (auto-scaling) + Read Replicas + Dedicated DNS
+
+Kubernetes:
+  - General pool (HPA 3-10):        t3.large (2 vCPU, 8 GB) min 3, max 10
+  - DNS Proxy pool (HPA 3-8):       c6g.large (2 vCPU, 4 GB) min 3, max 8
+  - Worker pool (HPA 2-6):          t3.large (2 vCPU, 8 GB) min 2, max 6
+  - Control plane:                  Managed (EKS/GKE/AKS ~$73/month)
+
+Managed Services:
+  - PostgreSQL:                     db.r6g.xlarge (4 vCPU, 32 GB) - Primary + 2 read replicas
+  - Redis:                          cache.r6g.xlarge (4 vCPU, 26 GB) - Cluster
+  - Object Storage:                 ~3-5 TB
+  - CDN:                            CloudFront / Cloudflare Enterprise
+  - Push:                           Firebase FCM (still free at this scale)
+  - Load Balancer:                  ALB + NLB
+  - Monitoring:                     Datadog/New Relic or self-hosted Thanos
+
+Monthly Estimated Cost (2,000 devices):
+  - Kubernetes:                     $350-600
+  - Managed DB + Redis:             $400-600
+  - Storage + CDN:                  $150-300
+  - Network + LB:                   $80-150
+  - TOTAL:                          ~$980-1,650/month
+
+Monthly Estimated Cost (3,000 devices):
+  - TOTAL:                          ~$1,300-2,200/month
+
+--------------------------------------------------------------------------------
+TIER 5: 5,000 DEVICES (Scale Phase)
+--------------------------------------------------------------------------------
+Architecture: Multi-region Kubernetes + Dedicated DNS Cluster + Partitioned DB
+
+Kubernetes (2 regions, active-active):
+  - Per region:                     General 5-15 nodes, DNS 5-12 nodes, Workers 3-8 nodes
+  - Instance types:                 c6g.xlarge (4 vCPU, 8 GB) for DNS, r6g.large (2 vCPU, 16 GB) for API
+  - Control plane:                  Managed x2
+
+Managed Services:
+  - PostgreSQL:                     Aurora Serverless v2 / Cloud SQL (auto-scale 4-64 ACU)
+  - Redis:                          ElastiCache Serverless or MemoryDB
+  - Object Storage:                 ~10 TB + CloudFront
+  - DNS Proxy:                      Dedicated cluster (PowerDNS + custom filter) or Cloudflare Gateway
+  - Push:                           Firebase FCM + backup (ntfy/UnifiedPush)
+  - Message Queue:                  Kafka (MSK) or RabbitMQ for async reporting
+  - Search/Analytics:               ClickHouse or BigQuery for usage analytics
+
+Monthly Estimated Cost:
+  - Kubernetes (2 regions):         $1,200-2,000
+  - Managed DB + Redis:             $800-1,500
+  - Storage + CDN:                  $400-800
+  - Network + DNS + Queue:          $300-600
+  - Observability:                  $200-500
+  - TOTAL:                          ~$2,900-5,400/month
+
+--------------------------------------------------------------------------------
+TIER 6: 10,000 DEVICES (Mature Product)
+--------------------------------------------------------------------------------
+Architecture: Full multi-region, sharded DB, dedicated infrastructure team
+
+Kubernetes (3+ regions):
+  - API Gateway:                    Kong/Envoy + K8s Ingress
+  - Service Mesh:                   Istio/Linkerd
+  - DNS Filtering:                  Custom eBPF/XDP + PowerDNS cluster (10+ nodes)
+  - Workers:                        Kubernetes Jobs + KEDA autoscaling
+  - Control planes:                 3x managed
+
+Data Layer:
+  - PostgreSQL:                     Aurora Global DB / Vitess (sharded by device_id)
+  - Redis:                          Redis Cluster (12+ shards) or Dragonfly
+  - Time-series:                    TimescaleDB or InfluxDB (usage metrics)
+  - Analytics:                      ClickHouse cluster (3+ nodes)
+  - Object Storage:                 50+ TB, multi-region replication
+  - CDN:                            Multi-CDN (CloudFront + Cloudflare + Fastly)
+  - Push:                           Firebase FCM + self-hosted fallback (millions free)
+  - Message Queue:                  Kafka (3+ broker cluster) or Pulsar
+
+Observability:
+  - Metrics:                        Thanos/Prometheus + Grafana Cloud
+  - Logs:                           Loki/Grafana or Elastic
+  - Traces:                         Tempo/Jaeger
+  - Alerting:                       PagerDuty/Opsgenie
+
+Monthly Estimated Cost:
+  - Kubernetes (3 regions):         $3,500-6,000
+  - Data layer (DB, Redis, TS, Analytics):  $2,500-5,000
+  - Storage + Multi-CDN:            $1,500-3,000
+  - Network + DNS + Queue:          $1,000-2,000
+  - Observability + Incident:       $800-1,500
+  - TOTAL:                          ~$9,300-17,500/month
+
+================================================================================
+COST PER DEVICE SUMMARY
+================================================================================
+
+| Devices | Monthly Cost | Cost/Device | Architecture |
+|---------|-------------|-------------|--------------|
+| 100     | $100        | $1.00       | Single VM    |
+| 300     | $200        | $0.67       | Single VM    |
+| 1,000   | $500        | $0.50       | K8s (small)  |
+| 3,000   | $1,800      | $0.60       | K8s (HA)     |
+| 5,000   | $4,200      | $0.84       | Multi-region |
+| 10,000  | $13,500     | $1.35       | Full scale   |
+
+Note: Cost/device increases at scale due to HA, multi-region, observability overhead.
+Optimization (reserved instances, committed use discounts) can reduce 30-40%.
+
+================================================================================
+PH-SPECIFIC OPTIMIZATIONS (for AnchorGuard PH Market)
+================================================================================
+
+1. Single-region (SG/HK) - latency acceptable for PH, 40% cheaper than multi-region
+2. Firebase FCM free tier covers 10K+ devices easily
+3. Cloudflare R2 (zero egress) + Workers for API edge caching
+4. Hetzner/Contabo dedicated servers for compute (5-10x cheaper than AWS)
+5. Offline-first design reduces API calls by 60-80%
+6. Local payment (GCash/Maya) - no Stripe/Braintree fees
+7. Tagalog-only content reduces storage/CDN by ~50%
+
+PH-Optimized Estimates (Hetzner + Cloudflare + Firebase):
+- 1,000 devices:  ~$80-120/month
+- 5,000 devices:  ~$300-500/month
+- 10,000 devices: ~$600-1,000/month
+
+================================================================================
+CRITICAL PATH COMPONENTS (Must Build First)
+================================================================================
+
+Priority 1 (MVP - 100 devices):
+  [ ] Device registration + JWT auth
+  [ ] App whitelist CRUD + sync
+  [ ] PIN verification (local + remote)
+  [ ] Screen time engine (local, synced daily)
+  [ ] FCM push for remote lock/config
+  [ ] Basic usage reporting (batched daily)
+
+Priority 2 (1,000 devices):
+  [ ] Multi-profile support
+  [ ] Web filtering (DNS proxy - can use NextDNS/CleanBrowsing API initially)
+  [ ] Cloud backup/restore
+  [ ] Admin dashboard (parent web portal)
+  [ ] Licensing / IAP validation
+
+Priority 3 (5,000+ devices):
+  [ ] Real-time sync (WebSocket/gRPC streaming)
+  [ ] Advanced scheduling (calendar, geo-fences if legal)
+  [ ] Chores & rewards engine
+  [ ] Analytics dashboard for parents
+  [ ] Multi-region deployment
+
+================================================================================
+DNS SAFE BROWSING - BUILD VS BUY
+================================================================================
+
+Kids Place uses: Custom dnsjava VPN + kpsbproxy.kiddoware.com
+
+Options for AnchorGuard:
+1. Build custom (dnsjava/Go + blocklists):     ~$200-500/month at 10K devices
+   - Full control, no per-query cost
+   - Maintenance burden (blocklist updates, false positives)
+
+2. NextDNS API (reseller):                     ~$0.50/device/month = $5,000/month at 10K
+   - Zero maintenance, excellent categorization
+   - Recurring cost scales linearly
+
+3. CleanBrowsing / OpenDNS FamilyShield:       Free for basic, $2-5/device/year for API
+   - Good middle ground
+
+4. Hybrid: NextDNS for categorization, local DNS cache for performance
+   - Recommended for 1K-10K scale
+
+RECOMMENDATION: Start with NextDNS API (fast to market), migrate to custom at 5K+ devices.
+
+================================================================================
+LICENSING / BILLING
+================================================================================
+
+PH Market Strategy:
+- One-time purchase: ₱500-1,000 (~$9-18) via GCash/Maya
+- No subscription = no recurring billing infrastructure needed
+- License validation: Signed JWT + device binding (offline verifiable)
+- Play Billing only for optional "Pro" features (cloud sync, web filter)
+
+Infrastructure: Minimal - license verification endpoint + webhook for payments.
+
+================================================================================
+MONITORING & ALERTING THRESHOLDS
+================================================================================
+
+| Metric | Warning | Critical | Action |
+|--------|---------|----------|--------|
+| API p99 latency | >500ms | >2s | Scale HPA, check DB |
+| Error rate (5xx) | >1% | >5% | Page on-call |
+| FCM delivery rate | <95% | <90% | Check token refresh |
+| DNS proxy latency | >100ms | >500ms | Scale DNS nodes |
+| DB CPU | >70% | >85% | Upgrade instance |
+| Redis memory | >75% | >90% | Evict/Scale |
+| Cert expiry | <30 days | <7 days | Auto-renew alert |
+
+================================================================================
+DISASTER RECOVERY
+================================================================================
+
+RPO/RTO Targets by Tier:
+- 100-1,000:  RPO 1 hour, RTO 4 hours (automated backup + manual restore)
+- 3,000-5,000: RPO 15 min, RTO 1 hour (cross-region replica + automated failover)
+- 10,000+:    RPO <1 min, RTO <15 min (multi-active + automated failover)
+
+Backup Strategy:
+- PostgreSQL: Point-in-time recovery (PITR) + daily logical dumps to S3/R2
+- Redis: RDB snapshots every 60s + AOF
+- Object Storage: Cross-region replication (CRR)
+- Kubernetes: GitOps (ArgoCD/Flux) - cluster state in Git
+
+================================================================================
+SECURITY REQUIREMENTS
+================================================================================
+
+- All API traffic: mTLS (service mesh) or TLS 1.3
+- Device communication: Certificate pinning + JWT (rotated weekly)
+- Database: Encryption at rest (KMS) + in transit
+- Secrets: Vault/Sealed Secrets (not in Git)
+- Audit logging: All admin actions + config changes
+- Penetration test: Annual (required for Play Store Data Safety)
+- COPPA/GDPR/PDPA (PH) compliance: Data minimization, right to delete, age gating
+
+================================================================================
+TEAM SCALING
+================================================================================
+
+| Devices | Backend Engineers | DevOps/SRE | Mobile Engineers | QA | Support |
+|---------|------------------|------------|-----------------|-----|---------|
+| 100     | 1                | 0.5        | 1               | 0   | 0       |
+| 1,000   | 2                | 1          | 2               | 1   | 1       |
+| 5,000   | 4                | 2          | 3               | 2   | 2       |
+| 10,000  | 6-8              | 3-4        | 4-5             | 3   | 4-5     |
+
+================================================================================
+NEXT STEPS FOR ANCHORGUARD
+================================================================================
+
+1. Start with Tier 1 architecture (single VM + managed DB + Firebase FCM)
+2. Use Hetzner CX42 (8 vCPU, 16 GB, €35/mo) or equivalent
+3. PostgreSQL on same VM initially (Docker), migrate to managed at 500 devices
+4. Cloudflare Tunnel for ingress (free, no public IP needed)
+5. Tailscale for admin access (already planned)
+6. Build MVP features in priority order
+7. Load test at 500 simulated devices before public launch
+8. Migrate to K8s at 2,000+ devices
+
+================================================================================
+END OF REPORT
+================================================================================
+Generated: 2026-11-18
+Based on: Guardify/Kids Place v3.10.15 reverse engineering analysis
+For: AnchorGuard Parental Control App - PH Market

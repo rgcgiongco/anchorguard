@@ -1,0 +1,7 @@
+AnchorGuard VM on DSN-MONITOR-PC
+
+hostname anchorguard
+
+root/anchor1234
+
+anchor/admin1234

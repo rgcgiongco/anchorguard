@@ -1,0 +1,70 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "android-pilot": {
+      "type": "local",
+      "command": "android-pilot-mcp",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "androidbuild": {
+      "type": "local",
+      "command": "androidbuild-mcp",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "firebase": {
+      "type": "local",
+      "command": "firebase mcp",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "docker": {
+      "type": "local",
+      "command": "docker-mcp",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "sqlite": {
+      "type": "local",
+      "command": "mcp-sqlite",
+      "environment": {
+        "DB_PATH": "/home/anchor/AnchorGuard/guardify.db"
+      },
+      "enabled": true,
+      "timeout": 30000
+    },
+    "codegraph": {
+      "type": "local",
+      "command": "codegraph serve --mcp",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": "mcp-server-sequential-thinking",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "linux": {
+      "type": "local",
+      "command": "system-monitoring-mcp-server",
+      "environment": {},
+      "enabled": true,
+      "timeout": 30000
+    },
+    "filesystem": {
+      "type": "local",
+      "command": "mcp-server-filesystem /home/anchor/AnchorGuard",
+      "environment": {},
+      "enabled": true,
+      "timeout": 60000
+    }
+  }
+}

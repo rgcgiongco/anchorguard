@@ -1,0 +1,42 @@
+Guardify rebrand assessment (based on GUARDIFY_ANALYSIS_REPORT.md)
+The APK analyzed is internally Kids Place (com.kiddoware.kidsplace, v3.10.15/965), despite the filename Guardify_custom001.apk — no “Guardify” appears in DEX/resources (§1, §24). It is a release, R8-obfuscated, custom-signed build (v2-only, CN=Paresh Joshi) with no native libs and no Flutter/RN (§1–§2). Rebranding is therefore not a cosmetic rename only; it spans app identity, package/permissions, resources, backend/Firebase, signing, and partner integrations.
+
+1. Identity & branding touchpoints (must change)
+Area	Current (from report)	Guardify rebrand action	Evidence
+User-visible name	@string/app_name, @string/home_title = “Kids Place”	Replace all launcher/home/title strings, in-app copy, notifications, and channel labels referencing Kids Place	§1
+Package / application ID	com.kiddoware.kidsplace	Decide: keep package (compatibility/signature continuity) vs rename to com.kiddoware.guardify (clean brand, but breaks updates, deep links, stored data paths, and all IPC)	§1, §9
+App components/classes	KidsLauncher, KidsPlaceService, KidsPlaceAccessibilityService, KP* activities/receivers/providers	If package renamed, refactor namespaces, manifest component names, intents/actions, and all hardcoded class/package strings; obfuscation means source/mapping required	§4.2–§4.7
+Custom permissions	com.kiddoware.kidsplace.KPService.permission.Access, ...CURRENT_RUNNING_APP	Rename permissions and update all guards (7 exported providers, exported service); coordinate with any external/plugin apps that hold them	§3.2, §3.3, §8.7
+Plugin IPC packages	com.kiddoware.kidsvideoplayer.*, com.kiddoware.kidsafebrowser, com.kiddoware.safebrowsingvpn	Update permission names and package references; co-rebrand or maintain compatibility with existing Kiddoware plugins	§3.3, §4.6
+Cross-promo & bundled content	assets/ads.json promotes Kids Safe Browser/Video Player/Picture Viewer; S3 Lottie, Firebase Storage wallpapers; stories module com.kidsplace.stories.*	Replace ad targets/art, asset URLs/buckets, story branding, and any “Kids Place” content copy	§4.1, §5.4, §7
+Legal/policy links	kiddoware.com/kids-place-* privacy/EULA/subscription/manual URLs bundled	Publish Guardify-branded policy/EULA pages and update in-app links	§5.5
+Visual assets	Icons, launcher assets, wallpapers (Firebase Storage), Lottie animations, block_popup overlay UI	New icon set, splash/theme, overlay copy (“App Blocked” flow), and hosted assets	§4.3, §5.3–§5.4
+2. Backend, Firebase, and remote-control dependencies (high coupling)
+Dependency	Current	Rebrand consideration
+Kiddoware APIs	https://app.kiddoware.com/kw_backend_new/public/api/kp/api/ & /kpclient/, getKey→updateInstall handshake (encrypted session flow), BaseResponse envelope	Rebrand server-side branding/endpoints or add aliases; update app constants, auth headers, and gRPC API-key channel; QA/prod parity (qa.app.kiddoware.com)
+Web/portal/licensing	kidsplace.kiddoware.com, licensing.kiddoware.com, login/forgot flows	Guardify domain/portal, licensing product IDs, and SSO/billing integration (com.kiddoware.library.singlesignon, Play Billing)
+Safe browsing	DNS VPN + dnsjava → https://kpsbproxy.kiddoware.com/ and plugin com.kiddoware.safebrowsingvpn	Re-host/repoint proxy and rules API; keep DNS filtering behavior consistent
+Firebase project	Project kids-place, bucket kids-place.appspot.com, FCM, Firestore backup/device registry, Remote Config, Crashlytics, Auth/UI, reCAPTCHA	Create/migrate to a Guardify Firebase project (new google-services config, FCM sender, Firestore rules/data model, Storage assets, Remote Config keys, Crashlytics/Analytics properties); handle cloud-backup migration for existing users
+Remote control	FCM action kiddoware.kpsbcontrolpanel.PUSHDEVICECONFIG → SynchronizationReceiver; RemoteLockIntentService (job 9987)	Rename actions/push contract and coordinate parent panel/control-plane changes
+Device identity	computeDeviceId() effectively returns raw ANDROID_ID (hashed value discarded) as cloud key	Changing ID scheme breaks account/device linkage; if fixed during rebrand, plan a migration path
+3. Signing, distribution, and security-sensitive items
+Signing: current artifact is self-signed v2-only (CN=Paresh Joshi, cert SHA-256 f938…8dbd, valid 2011–2038) — custom/enterprise style, not Play App Signing lineage (§2). A Guardify release needs a deliberate keystore strategy: retain key for in-place updates to this build, or use a new Guardify key (new install identity). Do not ship with debug leftovers like xanadu_debug=true (§3.4, §8.4).
+Exported surface to review during rebrand: 7 exported ContentProviders guarded by signature-level permission (verify its protectionLevel, not recovered), exported receivers/services including AutoStartKpReceiver and RemoteLockIntentService exported without permission (§3.2, §8.2, §8.7). Rebrand is an opportunity to tighten these.
+Manifest posture: persistent=true, boot receivers, sticky/re-delivered foreground service, DnsVpnService, accessibility/device-admin bindings are core to enforcement (§3.1, §4.3–§4.6) — renaming must preserve privileges/foreground types.
+Cleartext & config: bundled http://kiddoware.com/... icon URLs imply network security exceptions; review @xml/network_security_config (not recovered in report) as part of domain migration (§8.6, §9).
+4. Data, storage, and user migration
+Local/Room schema: KidsApplication, User, Category, AppLaunches, tasks, scheduler, etc. (§6). Package/database/provider authority changes can invalidate local data unless migrations/authorities are preserved.
+Defaults & flavor: default user/category seeding and BuildConfig.FLAVOR-derived values exist in startup logic (§4.2, §6) — set Guardify defaults/flavor explicitly.
+Backups: local + Firestore cloud backup/restore flows (FirestoreBackupIntentService, CloudBackupActivity, etc.) are tied to current Firebase/backend (§4.8, §7).
+5. Constraints and unknowns from this analysis (relevant to execution)
+Static, decompiled, R8-obfuscated view only; many classes/methods are single-letter (Utility, i, l0, ud.*, etc.) and exact request bodies/cipher for getKey, network_security_config.xml contents, Room task schema details, and permission protectionLevel were not recovered (§9). Accurate renaming/refactor needs original source or deobfuscated/mapped code.
+No source project in workspace scope: analysis\ contains the report and supporting artifacts; this is not the buildable app source. A true rebrand requires the original Android project (Gradle, manifests, resources, google-services.json, keystore, backend configs).
+6. Recommended phased plan
+Decide scope: cosmetic (name/assets/links) vs full product rebrand (new package, Guardify Firebase, Guardify domains/APIs, new signing). Full rebrand is a breaking migration for existing installs.
+Source-of-truth audit (on source repo): global replace for kiddoware, kidsplace, Kids Place, kids-place, custom permission strings, intent actions, provider authorities, push action, and deep links; inventory google-services/Firebase, endpoints, billing/licensing IDs.
+Brand layer: app name, icon/adaptive icon, theme/colors, launcher label, notification/FGS copy, overlay/lock UI, in-app strings, store/legal copy.
+Platform/config: package/applicationId strategy, manifest authorities/permissions, network_security_config, remove xanadu_debug, update build flavors and versioning.
+Services migration: Firebase project + Storage/FCM/Firestore/Remote Config/Auth, backend hostnames & getKey/updateInstall contract, Safe Browsing proxy, licensing/SSO/billing, parent control panel push contract.
+Compatibility/migration: data migration for device ID/package changes, plugin/app interoperability, exported-provider permission hardening.
+Validation: reinstall/upgrade paths, boot/lock/VPN/remote-lock/FCM flows, backup-restore, billing, and policy-link checks on targetSdk 36 / minSdk 29 devices.
+Execution note: I am in read-only Ask mode, so I can analyze and plan but cannot modify files or apply these changes here. To implement the rebrand, switch to a code/edit-capable mode/agent with access to the actual Guardify/Kids Place source project (not just this APK analysis). If you want, I can next produce a concrete rename matrix/checklist tailored to that source tree once it’s available.
