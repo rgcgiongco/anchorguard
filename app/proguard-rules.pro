@@ -29,3 +29,5 @@
 # Tink crypto library (used by AndroidX Security EncryptedSharedPreferences)
 -keep class com.google.crypto.tink.** { *; }
 -keep class com.google.errorprone.annotations.** { *; }
+-keep class com.google.api.client.http.** { *; }
+-keep class org.joda.time.** { *; }
