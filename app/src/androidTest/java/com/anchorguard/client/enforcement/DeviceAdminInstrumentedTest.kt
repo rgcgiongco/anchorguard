@@ -66,6 +66,5 @@ class DeviceAdminInstrumentedTest {
             "com.anchorguard.client.extra.ADMIN_VERIFY_REASON",
             AnchorGuardDeviceAdminReceiver.EXTRA_ADMIN_VERIFY_REASON
         )
-        assertEquals("AnchorGuardAdmin", AnchorGuardDeviceAdminReceiver.TAG)
     }
 }

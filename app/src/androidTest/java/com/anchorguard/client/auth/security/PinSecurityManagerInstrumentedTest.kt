@@ -58,7 +58,7 @@ class PinSecurityManagerInstrumentedTest {
 
         val result = manager.verifyPin("4321")
 
-        assertTrue(result is PinSecurityManager.PinVerifyResult.Success)
+        assertTrue(result is PinVerifyResult.Success)
     }
 
     @Test
@@ -69,7 +69,7 @@ class PinSecurityManagerInstrumentedTest {
 
         val result = manager.verifyPin("0000")
 
-        assertTrue(result is PinSecurityManager.PinVerifyResult.Failure)
+        assertTrue(result is PinVerifyResult.Failure)
     }
 
     @Test
@@ -79,7 +79,7 @@ class PinSecurityManagerInstrumentedTest {
 
         val result = manager.verifyPin("1234")
 
-        assertTrue(result is PinSecurityManager.PinVerifyResult.NotSet)
+        assertTrue(result is PinVerifyResult.NotSet)
     }
 
     @Test
@@ -90,9 +90,9 @@ class PinSecurityManagerInstrumentedTest {
 
         val result = manager.changePin("1111", "2222")
 
-        assertTrue(result is PinSecurityManager.PinVerifyResult.Success)
-        assertTrue(manager.verifyPin("2222") is PinSecurityManager.PinVerifyResult.Success)
-        assertFalse(manager.verifyPin("1111") is PinSecurityManager.PinVerifyResult.Success)
+        assertTrue(result is PinVerifyResult.Success)
+        assertTrue(manager.verifyPin("2222") is PinVerifyResult.Success)
+        assertFalse(manager.verifyPin("1111") is PinVerifyResult.Success)
     }
 
     @Test
@@ -103,7 +103,7 @@ class PinSecurityManagerInstrumentedTest {
 
         val result = manager.changePin("9999", "2222")
 
-        assertTrue(result is PinSecurityManager.PinVerifyResult.Failure)
+        assertTrue(result is PinVerifyResult.Failure)
     }
 
     @Test
