@@ -81,7 +81,7 @@ object NetworkModule {
             .addInterceptor(DeviceKeyInterceptor(app))
             .addInterceptor(AuthInterceptor(app))
             .addInterceptor(loggingInterceptor())
-            .authenticator(SessionAuthenticator(app) { req -> refreshApi.refresh(req) })
+            .authenticator(SessionAuthenticator(app) { { req -> refreshApi.refresh(req) } })
             .build()
 
         val retrofit = Retrofit.Builder()

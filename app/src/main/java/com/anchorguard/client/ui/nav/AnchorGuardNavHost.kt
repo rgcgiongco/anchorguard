@@ -134,7 +134,7 @@ fun AnchorGuardNavHost(
             )
         }
         composable(Routes.DeviceSettings) { DeviceSettingsScreen() }
-        composable(Routes.Security) { SecurityScreen(onChangePin = { navController.navigate(Routes.PinChange) }, onRequireParentGate = { navController.navigate(Routes.ParentGate) }) }
+        composable(Routes.Security) { SecurityScreen() }
         composable(Routes.Users) { UsersScreen() }
         composable(Routes.Timer) { TimerScreen() }
         composable(Routes.Account) { AccountScreen(
