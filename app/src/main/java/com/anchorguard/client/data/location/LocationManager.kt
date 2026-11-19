@@ -1,12 +1,9 @@
 package com.anchorguard.client.data.location
 
-import android.Manifest.permission
-import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Location
+import android.location.Location as AndroidLocation
 import android.os.Looper
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -20,13 +17,12 @@ class LocationManager private constructor(
 ) {
 
     private var locationCallback: LocationCallback? = null
-    private var currentLocation: Location? = null
+    private var currentLocation: AndroidLocation? = null
 
     fun requestLocationUpdates(
-        activity: Activity,
         intervalMillis: Long = 5 * 60 * 1000,
         fastestIntervalMillis: Long = 60 * 1000,
-        onLocation: (Location) -> Unit
+        onLocation: (AndroidLocation) -> Unit
     ): Boolean {
         if (!hasFineLocationPermission()) return false
         val request = LocationRequest.create().apply {
@@ -42,13 +38,11 @@ class LocationManager private constructor(
                 }
             }
         }
-        fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
+        fusedLocationClient.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
         return true
     }
 
-    suspend fun getLastLocation(): Location? = currentLocation
-
-    fun getLastLocationSync(): Location? = currentLocation
+    fun getLastLocation(): AndroidLocation? = currentLocation
 
     fun removeLocationUpdates() {
         locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
@@ -56,14 +50,14 @@ class LocationManager private constructor(
     }
 
     fun hasFineLocationPermission(): Boolean =
-        ContextCompat.checkSelfPermission(context, permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     fun hasCoarseLocationPermission(): Boolean =
-        ContextCompat.checkSelfPermission(context, permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     fun hasBackgroundLocationPermission(): Boolean =
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            ContextCompat.checkSelfPermission(context, permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
         } else true
 
     fun shutdown() {

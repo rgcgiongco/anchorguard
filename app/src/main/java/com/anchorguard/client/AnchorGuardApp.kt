@@ -2,6 +2,7 @@ package com.anchorguard.client
 
 import android.app.Application
 import com.anchorguard.client.data.location.LocationManager
+import com.anchorguard.client.data.location.LocationRepository
 import com.anchorguard.client.data.location.LocationTrackingController
 import com.anchorguard.client.data.sync.SyncScheduler
 import com.anchorguard.client.network.ConnectivityState

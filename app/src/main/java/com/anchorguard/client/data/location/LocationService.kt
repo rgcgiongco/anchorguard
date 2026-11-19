@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.location.Location as AndroidLocation
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -18,7 +19,6 @@ import com.anchorguard.client.data.local.dao.LocationDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class LocationForegroundService : Service() {
 
@@ -43,7 +43,10 @@ class LocationForegroundService : Service() {
                 startTracking()
                 return START_STICKY
             }
-            else -> startTracking()
+            else -> {
+                startTracking()
+                return START_STICKY
+            }
         }
     }
 
@@ -54,9 +57,8 @@ class LocationForegroundService : Service() {
         scope?.launch {
             try {
                 locationManager?.requestLocationUpdates(
-                    activity = null,
-                    onLocation = { loc ->
-                        persistLocation(loc)
+                    onLocation = { androidLoc ->
+                        scope?.launch { persistLocation(androidLoc) }
                     }
                 )
             } catch (e: Exception) {
@@ -66,23 +68,23 @@ class LocationForegroundService : Service() {
     }
 
     private fun stopTracking() {
-        scope?.coroutineContext.cancelChildren()
+        scope?.cancel()
         scope = null
         locationManager?.removeLocationUpdates()
         locationManager = null
     }
 
-    private suspend fun persistLocation(loc: Location) = withContext(Dispatchers.Main) {
+    private suspend fun persistLocation(androidLoc: AndroidLocation) = withContext(Dispatchers.Main) {
         try {
             val dao = LocationDaoProvider.dao(applicationContext)
             dao.insert(Location(
                 id = java.util.UUID.randomUUID().toString(),
                 deviceId = "",
-                latitude = loc.latitude,
-                longitude = loc.longitude,
-                accuracyMeters = loc.accuracy.toInt(),
-                timestampMillis = loc.time,
-                provider = loc.provider ?: "fused"
+                latitude = androidLoc.latitude,
+                longitude = androidLoc.longitude,
+                accuracyMeters = androidLoc.accuracy.toInt(),
+                timestampMillis = androidLoc.time,
+                provider = androidLoc.provider ?: "fused"
             ))
         } catch (e: Exception) {
             Log.w(TAG, "Failed to persist location", e)
@@ -163,10 +165,6 @@ class LocationForegroundService : Service() {
     }
 }
 
-/**
- * Holds a LocationDao instance per application context so the foreground service
- * can persist locations without activity-scoped Hilt dependencies.
- */
 object LocationDaoProvider {
     @Volatile private var dao: LocationDao? = null
     @Volatile private var lastContext: Context? = null

@@ -1,7 +1,6 @@
 package com.anchorguard.client.data.location
 
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
@@ -9,8 +8,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
 class LocationPermissionHelper private constructor(private val activity: FragmentActivity) {
-
-    private const val REQUEST_CODE = 1002
 
     fun requestLocationPermissions(onResult: (granted: Boolean) -> Unit) {
         val perms = arrayOf(
@@ -53,6 +50,8 @@ class LocationPermissionHelper private constructor(private val activity: Fragmen
     }
 
     companion object {
+        private const val REQUEST_CODE = 1002
+
         @Volatile private var instance: LocationPermissionHelper? = null
 
         fun init(activity: FragmentActivity): LocationPermissionHelper {

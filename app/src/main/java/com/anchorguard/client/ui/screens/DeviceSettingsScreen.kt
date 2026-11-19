@@ -1,9 +1,11 @@
 package com.anchorguard.client.ui.screens
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -28,7 +30,9 @@ fun DeviceSettingsScreen() {
     }
 
     LaunchedEffect(trackingEnabled) {
-        controller.setTrackingEnabled(trackingEnabled)
+        scope.launch {
+            controller.setTrackingEnabled(trackingEnabled)
+        }
     }
 
     ScreenScaffold(
