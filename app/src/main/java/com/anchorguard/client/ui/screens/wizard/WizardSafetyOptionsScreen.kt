@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -27,6 +29,8 @@ import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorPrimaryButton
 import com.anchorguard.client.ui.components.AnchorSecondaryButton
 import com.anchorguard.client.ui.components.AnchorSwitch
+import com.anchorguard.client.ui.components.ExpandableHelpCard
+import com.anchorguard.client.ui.components.WizardProgressIndicator
 import com.anchorguard.client.ui.screens.ScreenScaffold
 import kotlinx.coroutines.launch
 
@@ -34,7 +38,9 @@ import kotlinx.coroutines.launch
 fun WizardSafetyOptionsScreen(
     onComplete: () -> Unit,
     onSkipped: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    currentStep: Int = 5,
+    totalSteps: Int = 6
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -52,6 +58,7 @@ fun WizardSafetyOptionsScreen(
     var pinError by remember { mutableStateOf<String?>(null) }
     var sosError by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var pinSkippedWarning by remember { mutableStateOf(false) }
 
     ScreenScaffold(
         title = "Safety options",
@@ -62,40 +69,22 @@ fun WizardSafetyOptionsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = androidx.compose.ui.Alignment.Start
         ) {
-            // Parent PIN section
-            AnchorSwitch(
-                checked = pinEnabled,
-                onCheckedChange = { pinEnabled = it; if (!it) { pinError = null; pin = ""; confirm = "" } },
-                label = "Parent PIN",
-                description = "Create a 4–6 digit PIN for Parent Gate access on this device."
-            )
-            if (pinEnabled) {
-                OutlinedTextField(
-                    value = pin,
-                    onValueChange = { if (it.length <= 6 && it.all { it.isDigit() }) pin = it },
-                    label = { Text("PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = confirm,
-                    onValueChange = { if (it.length <= 6 && it.all { it.isDigit() }) confirm = it },
-                    label = { Text("Confirm PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (pinError != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(pinError!!, color = MaterialTheme.colorScheme.error)
+            WizardProgressIndicator(currentStep = currentStep, totalSteps = totalSteps)
+
+            ExpandableHelpCard(
+                title = "Why set up safety options?",
+                initiallyExpanded = false
+            ) {
+                Column {
+                    Text(
+                        text = "These optional protections help keep the device safe. Parent PIN prevents unauthorized changes to settings, SOS sends an emergency alert, and Safe Zones notify you when the device enters or leaves a location. You can skip any of these and set them up later from the Parent Dashboard.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
-
-            // SOS section
+            // SOS section (first — most important safety feature)
             AnchorSwitch(
                 checked = sosEnabled,
                 onCheckedChange = { it ->
@@ -142,11 +131,73 @@ fun WizardSafetyOptionsScreen(
                 description = "Set up home/school safe zones. Location-based alerts come from the Parent Dashboard."
             )
             if (geofenceEnabled) {
+                Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Geofence zones can be created from the Parent Dashboard after setup completes.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Parent PIN section (optional, last with warnings)
+            AnchorSwitch(
+                checked = pinEnabled,
+                onCheckedChange = { pinEnabled = it; if (!it) { pinError = null; pin = ""; confirm = "" } },
+                label = "Parent PIN",
+                description = "Create a 4–6 digit PIN for Parent Gate access on this device."
+            )
+            if (pinEnabled) {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { if (it.length <= 6 && it.all { it.isDigit() }) pin = it },
+                    label = { Text("PIN") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { if (it.length <= 6 && it.all { it.isDigit() }) confirm = it },
+                    label = { Text("Confirm PIN") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (pinError != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(pinError!!, color = MaterialTheme.colorScheme.error)
+                }
+            } else {
+                pinSkippedWarning = true
+            }
+
+            if (pinSkippedWarning) {
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.warningContainer,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.filled.Warning,
+                                contentDescription = "Warning",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Without a Parent PIN, anyone can change settings on this device. Set one up from the Parent Dashboard later.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onWarningContainer
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))

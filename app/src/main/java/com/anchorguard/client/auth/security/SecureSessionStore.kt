@@ -105,6 +105,7 @@ class SecureSessionStore(context: Context) {
     private const val KEY_OVERLAY_GRANTED = "overlay_granted"
     private const val KEY_BATTERY_OPT_OUT = "battery_opt_out"
     private const val KEY_WIZARD_ROLE = "wizard_role"
+    private const val KEY_SETUP_MODE = "setup_mode"
     private const val KEY_SOS_ENABLED = "sos_enabled"
     private const val KEY_GEOFENCE_ENABLED = "geofence_enabled"
     }
@@ -123,6 +124,12 @@ class SecureSessionStore(context: Context) {
 
     fun isParentRole(): Boolean = wizardRole() == "parent"
     fun isChildRole(): Boolean = wizardRole() == "child"
+
+    fun setSetupMode(mode: String) {
+        prefs.edit().putString(KEY_SETUP_MODE, mode).apply()
+    }
+
+    fun setupMode(): String? = prefs.getString(KEY_SETUP_MODE, null)?.takeIf { it.isNotBlank() }
 
     fun setDeviceAdminGranted(granted: Boolean) {
         prefs.edit().putBoolean(KEY_DEVICE_ADMIN_GRANTED, granted).apply()

@@ -26,6 +26,7 @@ object Routes {
     const val Sos = "sos"
     const val WizardWelcome = "wizard_welcome"
     const val WizardRoleSelection = "wizard_role_selection"
+    const val WizardEntry = "wizard_entry"
     const val WizardParentAuth = "wizard_parent_auth"
     const val WizardChildRegister = "wizard_child_register"
     const val WizardPermissions = "wizard_permissions"

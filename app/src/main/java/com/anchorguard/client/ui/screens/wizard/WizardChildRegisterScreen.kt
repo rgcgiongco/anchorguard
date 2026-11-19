@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.anchorguard.client.auth.data.AuthRepository
+import com.anchorguard.client.auth.security.SecureSessionStore
 import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorPrimaryButton
 import com.anchorguard.client.ui.screens.ScreenScaffold
@@ -25,13 +26,18 @@ import kotlinx.coroutines.launch
 @Composable
 fun WizardChildRegisterScreen(
     onRegistered: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    setupMode: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repo = remember { AuthRepository(context) }
+    val store = remember { SecureSessionStore(context) }
+    val mode = setupMode ?: store.setupMode() ?: "child_device"
     var busy by remember { mutableStateOf(false) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val isParentAddingChild = mode == "parent_adding_child"
 
     LaunchedEffect(Unit) {
         if (busy) return@LaunchedEffect
@@ -49,8 +55,12 @@ fun WizardChildRegisterScreen(
     }
 
     ScreenScaffold(
-        title = "Registering device",
-        subtitle = "This child device is being registered with your AnchorGuard account."
+        title = if (isParentAddingChild) "Registering child device" else "Registering device",
+        subtitle = if (isParentAddingChild) {
+            "This child device is being registered to your AnchorGuard account."
+        } else {
+            "This child device is being registered with your AnchorGuard account."
+        }
     ) {
         if (busy) {
             Text(text = "Registering this device…", style = MaterialTheme.typography.bodyLarge)

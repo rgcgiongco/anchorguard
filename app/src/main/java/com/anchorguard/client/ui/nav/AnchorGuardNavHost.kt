@@ -41,12 +41,11 @@ import com.anchorguard.client.ui.screens.UsersScreen
 import com.anchorguard.client.ui.screens.WelcomeScreen
 import com.anchorguard.client.ui.screens.wizard.WizardChildRegisterScreen
 import com.anchorguard.client.ui.screens.wizard.WizardCompleteScreen
+import com.anchorguard.client.ui.screens.wizard.WizardEntryScreen
 import com.anchorguard.client.ui.screens.wizard.WizardPairingScreen
 import com.anchorguard.client.ui.screens.wizard.WizardParentAuthScreen
 import com.anchorguard.client.ui.screens.wizard.WizardPermissionGuideScreen
-import com.anchorguard.client.ui.screens.wizard.WizardRoleSelectionScreen
 import com.anchorguard.client.ui.screens.wizard.WizardSafetyOptionsScreen
-import com.anchorguard.client.ui.screens.wizard.WizardWelcomeScreen
 
 @Composable
 fun AnchorGuardNavHost(
@@ -83,21 +82,41 @@ fun AnchorGuardNavHost(
                     }
                 },
                 onWizardNeeded = {
-                    navController.navigate(Routes.WizardWelcome) {
+                    navController.navigate(Routes.WizardEntry) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 }
             )
         }
-        composable(Routes.WizardWelcome) {
-            WizardWelcomeScreen(
-                onGetStarted = { navController.navigate(Routes.WizardRoleSelection) }
-            )
-        }
-        composable(Routes.WizardRoleSelection) {
-            WizardRoleSelectionScreen(
-                onParentDevice = { navController.navigate(Routes.WizardParentAuth) },
-                onChildDevice = { navController.navigate(Routes.WizardChildRegister) }
+        composable(Routes.WizardEntry) {
+            WizardEntryScreen(
+                onParentDevice = {
+                    val context = LocalContext.current
+                    val store = remember { SecureSessionStore(context) }
+                    store.setWizardRole("parent")
+                    store.setSetupMode("parent")
+                    navController.navigate(Routes.WizardParentAuth) {
+                        popUpTo(Routes.WizardEntry) { inclusive = true }
+                    }
+                },
+                onChildDevice = {
+                    val context = LocalContext.current
+                    val store = remember { SecureSessionStore(context) }
+                    store.setWizardRole("child")
+                    store.setSetupMode("child_device")
+                    navController.navigate(Routes.WizardChildRegister) {
+                        popUpTo(Routes.WizardEntry) { inclusive = true }
+                    }
+                },
+                onParentAddingChild = {
+                    val context = LocalContext.current
+                    val store = remember { SecureSessionStore(context) }
+                    store.setWizardRole("child")
+                    store.setSetupMode("parent_adding_child")
+                    navController.navigate(Routes.WizardChildRegister) {
+                        popUpTo(Routes.WizardEntry) { inclusive = true }
+                    }
+                }
             )
         }
         composable(Routes.WizardParentAuth) {
@@ -122,6 +141,8 @@ fun AnchorGuardNavHost(
         }
         composable(Routes.WizardPairing) {
             WizardPairingScreen(
+                currentStep = 4,
+                totalSteps = 6,
                 onPaired = {
                     navController.navigate(Routes.WizardSafety) {
                         popUpTo(Routes.WizardPairing) { inclusive = true }
@@ -137,6 +158,8 @@ fun AnchorGuardNavHost(
         }
         composable(Routes.WizardSafety) {
             WizardSafetyOptionsScreen(
+                currentStep = 5,
+                totalSteps = 6,
                 onComplete = {
                     navController.navigate(Routes.WizardComplete) {
                         popUpTo(Routes.WizardSafety) { inclusive = true }
@@ -155,6 +178,8 @@ fun AnchorGuardNavHost(
             val store = remember { SecureSessionStore(context) }
             val role = store.wizardRole()
             WizardCompleteScreen(
+                currentStep = 6,
+                totalSteps = 6,
                 onFinish = {
                     val target = when {
                         role == "parent" -> Routes.ParentDashboard
@@ -172,6 +197,11 @@ fun AnchorGuardNavHost(
         composable(Routes.WizardPermissions) {
             WizardPermissionGuideScreen(
                 onAllGranted = {
+                    navController.navigate(Routes.WizardPairing) {
+                        popUpTo(Routes.WizardPermissions) { inclusive = true }
+                    }
+                },
+                onSkipped = {
                     navController.navigate(Routes.WizardPairing) {
                         popUpTo(Routes.WizardPermissions) { inclusive = true }
                     }
