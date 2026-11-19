@@ -59,7 +59,7 @@ class GeofenceZoneController(
         @PathVariable zoneId: UUID
     ) {
         val zone = zoneRepository.findById(zoneId)
-            ?: throw com.anchorguard.api.common.NotFoundException("Geofence zone not found")
+            .orElseThrow { com.anchorguard.api.common.NotFoundException("Geofence zone not found") }
         deviceService.ownedDevice(principal, zone.deviceId)
         zoneRepository.delete(zone)
     }

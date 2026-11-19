@@ -76,7 +76,7 @@ class LocationService(
 
     fun current(principal: AuthPrincipal, deviceId: UUID): LocationResponse? {
         val device = deviceService.ownedDevice(principal, deviceId)
-        return locations.findFirstByDeviceIdOrderByTimestampDesc(deviceId).map { loc ->
+        return locations.findFirstByDeviceIdOrderByTimestampDesc(deviceId)?.let { loc ->
             LocationResponse(loc.id, loc.deviceId, loc.latitude, loc.longitude, loc.accuracy, loc.timestamp, loc.createdAt)
         }
     }
@@ -107,13 +107,13 @@ class LocationService(
 
     fun checkGeofenceAlerts(deviceId: UUID, latestLocation: Location): List<GeofenceAlertEvent> {
         val zoneList = zones.findAllByDeviceId(deviceId)
-        val currentZones = zoneList.filter { evaluateGeofence(latestLocation.latitude, latestLocation.longitude, it) }.toMap { it.id }
+        val currentZones = zoneList.filter { evaluateGeofence(latestLocation.latitude, latestLocation.longitude, it) }.associateBy { zone -> zone.id }
 
         val previous = locations.findFirstByDeviceIdAndTimestampLessThanOrderByTimestampDesc(
             deviceId, latestLocation.timestamp
         )
         val previousZones = if (previous != null) {
-            zoneList.filter { evaluateGeofence(previous.latitude, previous.longitude, it) }.toMap { it.id }
+            zoneList.filter { evaluateGeofence(previous.latitude, previous.longitude, it) }.associateBy { zone -> zone.id }
         } else emptyMap()
 
         val alerts = mutableListOf<GeofenceAlertEvent>()
