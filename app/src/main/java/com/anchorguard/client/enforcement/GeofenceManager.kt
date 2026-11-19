@@ -11,8 +11,8 @@ import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.data.local.AnchorGuardDatabase
 import com.anchorguard.client.data.local.dao.GeofenceDao
 import com.anchorguard.client.data.local.entity.Geofence
-import com.anchorguard.client.data.sync.NetworkConfig
 import com.anchorguard.client.data.sync.SyncApi
+import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.data.sync.SyncPreferences
 import com.anchorguard.client.data.sync.GeofenceZoneDto
 import com.anchorguard.client.network.NetworkModule
@@ -52,8 +52,10 @@ class GeofenceManager private constructor(
         geofenceJob = scope.launch {
             try {
                 val result = withContext(Dispatchers.Default) {
-                    val api: SyncApi = NetworkModule.syncApi(appContext)
-                    api.downloadGeofences(deviceId)
+                    safeApiCall(appContext) {
+                        val api: SyncApi = NetworkModule.syncApi(appContext)
+                        api.downloadGeofences(null, deviceId)
+                    }
                 }
                 when (result) {
                     is NetworkResult.Success -> {
@@ -93,32 +95,34 @@ class GeofenceManager private constructor(
      * and generates ENTER/EXIT alerts for zone transitions.
      */
     fun onLocationUpdate(latitude: Double, longitude: Double, timestampMillis: Long) {
-        val zones = geofenceDao.getAllForDevice(syncPrefs.deviceId() ?: "")
-        if (zones.isEmpty()) return
+        scope.launch {
+            val zones = geofenceDao.getAllForDevice(syncPrefs.deviceId() ?: "")
+            if (zones.isEmpty()) return@launch
 
-        val nowInside = zones.filter { zone ->
-            haversineMeters(latitude, longitude, zone.latitude, zone.longitude) <= zone.radiusMeters.toDouble()
-        }.map { it.zoneId }.toSet()
+            val nowInside = zones.filter { zone ->
+                haversineMeters(latitude, longitude, zone.latitude, zone.longitude) <= zone.radiusMeters.toDouble()
+            }.map { it.zoneId }.toSet()
 
-        // Detect enters
-        for (zoneId in nowInside - currentZoneIds) {
-            val zone = zones.find { it.zoneId == zoneId }
-            if (zone != null) {
-                Log.i(TAG, "Geofence ENTER: ${zone.name}")
-                postGeofenceAlert(zone.zoneId, zone.name, "ENTER", latitude, longitude, timestampMillis)
+            // Detect enters
+            for (zoneId in nowInside - currentZoneIds) {
+                val zone = zones.find { it.zoneId == zoneId }
+                if (zone != null) {
+                    Log.i(TAG, "Geofence ENTER: ${zone.name}")
+                    postGeofenceAlert(zone.zoneId, zone.name, "ENTER", latitude, longitude, timestampMillis)
+                }
             }
-        }
 
-        // Detect exits
-        for (zoneId in currentZoneIds - nowInside) {
-            val zone = zones.find { it.zoneId == zoneId }
-            if (zone != null) {
-                Log.i(TAG, "Geofence EXIT: ${zone.name}")
-                postGeofenceAlert(zone.zoneId, zone.name, "EXIT", latitude, longitude, timestampMillis)
+            // Detect exits
+            for (zoneId in currentZoneIds - nowInside) {
+                val zone = zones.find { it.zoneId == zoneId }
+                if (zone != null) {
+                    Log.i(TAG, "Geofence EXIT: ${zone.name}")
+                    postGeofenceAlert(zone.zoneId, zone.name, "EXIT", latitude, longitude, timestampMillis)
+                }
             }
-        }
 
-        currentZoneIds = nowInside
+            currentZoneIds = nowInside.toMutableSet()
+        }
     }
 
     private fun postGeofenceAlert(

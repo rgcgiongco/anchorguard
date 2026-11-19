@@ -32,17 +32,4 @@ data class DeviceRegisterResponse(
 
 data class PairDeviceRequest(val pairingCode: String)
 
-data class DeviceResponse(
-    val id: String,
-    val hexId: String,
-    val name: String?,
-    val model: String?,
-    val manufacturer: String?,
-    val appVersion: String?,
-    val lastSeen: String?,
-    val isOnline: Boolean,
-    val isPaired: Boolean,
-    val createdAt: String
-)
-
 data class MessageResponse(val message: String)

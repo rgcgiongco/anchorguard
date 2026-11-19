@@ -1,6 +1,7 @@
 package com.anchorguard.client.ui.screens.wizard
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.anchorguard.client.ui.screens.ScreenScaffold
 import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorPrimaryButton

@@ -1,7 +1,9 @@
 package com.anchorguard.client.ui.screens
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -33,7 +35,7 @@ fun ParentDashboardScreen(
                 elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 androidx.compose.foundation.layout.Column(
-                    modifier = androidx.compose.foundation.layout Modifier.padding(12.dp),
+                    modifier = Modifier.padding(12.dp),
                     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
                 ) {
                     Text(

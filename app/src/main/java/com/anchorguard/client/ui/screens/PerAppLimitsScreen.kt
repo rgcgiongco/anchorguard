@@ -1,5 +1,11 @@
 package com.anchorguard.client.ui.screens
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,10 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.ColorPainter
-import androidx.compose.ui.graphics.painter.ImagePainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.anchorguard.client.auth.data.AppPolicyResponse
+import com.anchorguard.client.auth.data.DevicePolicyResponse
 import com.anchorguard.client.auth.data.DevicePolicyRepository
 import com.anchorguard.client.enforcement.EnforcementController
 import com.anchorguard.client.network.NetworkConfig
@@ -51,8 +58,6 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.material3.Scaffold
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Save
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,8 +69,27 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
 
     var deviceId by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    var installedApps by remember { mutableStateOf<List<AppPolicyResponse>>(emptyList()) }
     var appPolicies by remember { mutableStateOf<Map<String, AppPolicyResponse>>(emptyMap()) }
-    var installedApps by remember { mutableStateOf<List<InstalledAppInfo>>(emptyList()) }
+
+    fun loadApps(deviceId: String) {
+        isLoading = true
+        scope.launch {
+            val result = withContext(Dispatchers.Default) {
+                DevicePolicyRepository(context.applicationContext).fetchInstalledApps(deviceId)
+            }
+            isLoading = false
+            when (result) {
+                is NetworkResult.Success<*> -> {
+                    installedApps = (result as NetworkResult.Success<List<AppPolicyResponse>>).data
+                    appPolicies = installedApps.associate { it.packageName to it }
+                }
+                is NetworkResult.Failure -> {
+                    // ignore
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         scope.launch {
@@ -76,94 +100,54 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
         }
     }
 
-    fun loadApps(deviceId: String) {
-        isLoading = true
-        scope.launch {
-            val installed = withContext(Dispatchers.Default) {
-                getInstalledApps(context)
-            }
-            val result = withContext(Dispatchers.Default) {
-                DevicePolicyRepository(context.applicationContext).fetchAppPolicies(deviceId)
-            }
-            isLoading = false
-            installedApps = installed
-            when (result) {
-                is NetworkResult.Success -> {
-                    appPolicies = result.data.apps.associateBy { it.packageName }
-                }
-                is NetworkResult.Failure -> {
-                    // continue with installed apps, policies empty
-                }
-            }
-        }
-    }
-
     fun saveAll() {
-        val device = deviceId ?: return
-        isLoading = true
         scope.launch {
-            val dtoList = appPolicies.values.map { policy ->
-                com.anchorguard.client.auth.data.AppPolicyDto(
-                    packageName = policy.packageName,
-                    appName = policy.appName,
-                    isAllowed = policy.isAllowed,
-                    dailyLimitMinutes = policy.dailyLimitMinutes,
-                    blockSchedule = policy.blockSchedule,
-                    internetAccess = policy.internetAccess
-                )
-            }
-            val result = withContext(Dispatchers.Default) {
-                DevicePolicyRepository(context.applicationContext).updateDevicePolicy(
-                    deviceId = device,
-                    settings = null,
-                    apps = dtoList
-                )
-            }
-            isLoading = false
-            when (result) {
-                is NetworkResult.Success -> {
-                    appPolicies.values.forEach { policy ->
-                        EnforcementController.syncAppDailyLimit(context, policy.packageName, policy.dailyLimitMinutes)
+            for (app in installedApps) {
+                val policy = appPolicies[app.packageName]
+                val result = withContext(Dispatchers.Default) {
+                    val isAllowed = policy?.isAllowed ?: true
+                    val dailyLimit = policy?.dailyLimitMinutes
+                    val internet = if (policy?.internetAccess == "on") "on" else "off"
+                    DevicePolicyRepository(context.applicationContext).updateAppPolicy(
+                        deviceId!!,
+                        app.packageName,
+                        app.appName,
+                        isAllowed,
+                        dailyLimit,
+                        internet
+                    )
+                }
+                when (result) {
+                    is NetworkResult.Success<*> -> {
+                        // ok
                     }
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Per-app limits saved")
+                    is NetworkResult.Failure -> {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Failed to save limits for ${app.appName}", duration = SnackbarDuration.Long)
+                        }
                     }
                 }
-                is NetworkResult.Failure -> {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Failed to save limits: ${result.error.userMessage()}", duration = SnackbarDuration.Long)
-                    }
-                }
+            }
+            scope.launch {
+                snackbarHostState.showSnackbar("All limits saved")
             }
         }
-    }
-
-    fun onLimitChanged(packageName: String, limit: Int?) {
-        val current = appPolicies[packageName]
-        if (current == null) return
-        val newPolicy = current.copy(dailyLimitMinutes = limit)
-        appPolicies = appPolicies.toMutableMap().apply { put(packageName, newPolicy) }.toMap()
-    }
-
-    fun onInternetChanged(packageName: String, enabled: Boolean) {
-        val current = appPolicies[packageName]
-        if (current == null) return
-        val newPolicy = current.copy(internetAccess = if (enabled) "on" else "off")
-        appPolicies = appPolicies.toMutableMap().apply { put(packageName, newPolicy) }.toMap()
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Per-app limits") },
+                title = { Text("App Limits") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.ArrowBack.Default, contentDescription = "Back")
+                        Icon(
+                            painter = ColorPainter(MaterialTheme.colorScheme.primary),
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 actions = {
@@ -171,7 +155,7 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
                         onClick = { saveAll() },
                         enabled = deviceId != null && !isLoading
                     ) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.Save.Default, contentDescription = "Save")
+                        Text("Save")
                     }
                 }
             )
@@ -191,13 +175,13 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
             )
             AnchorSectionDivider()
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally))
             } else if (installedApps.isEmpty()) {
                 Text(
                     text = "No apps found",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally)
                 )
             } else {
                 LazyColumn(
@@ -218,7 +202,7 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
                             modifier = Modifier.fillMaxWidth(),
                             headlineContent = {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = app.appName, style = MaterialTheme.typography.titleMedium)
+                                    Text(text = app.appName ?: app.packageName, style = MaterialTheme.typography.titleMedium)
                                     Text(
                                         text = app.packageName,
                                         style = MaterialTheme.typography.bodySmall,
@@ -227,9 +211,8 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
                                 }
                             },
                             leadingContent = {
-                                val painter = app.icon?.let { ImagePainter(it) } ?: ColorPainter(AnchorColors.surfaceContainer)
                                 Icon(
-                                    painter = painter,
+                                    painter = ColorPainter(MaterialTheme.colorScheme.surfaceContainer),
                                     contentDescription = null,
                                     modifier = Modifier.size(48.dp)
                                 )
@@ -240,45 +223,15 @@ fun PerAppLimitsScreen(onBack: () -> Unit) {
                                     horizontalAlignment = Alignment.End,
                                     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "Limit:",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        OutlinedTextField(
-                                            value = limitText,
-                                            onValueChange = {
-                                                limitText = it
-                                                if (it.isBlank()) {
-                                                    onLimitChanged(app.packageName, null)
-                                                } else {
-                                                    val parsed = it.toIntOrNull()
-                                                    if (parsed != null) {
-                                                        onLimitChanged(app.packageName, parsed)
-                                                    }
-                                                }
-                                            },
-                                            singleLine = true,
-                                            modifier = Modifier.width(70.dp),
-                                            label = { Text("min") }
-                                        )
-                                    }
+                                    OutlinedTextField(
+                                        value = limitText,
+                                        onValueChange = { limitText = it },
+                                        label = { Text("Limit (min)") },
+                                        modifier = Modifier.width(80.dp)
+                                    )
                                     Switch(
                                         checked = internetEnabled,
-                                        onCheckedChange = { onInternetChanged(app.packageName, it) },
-                                        colors = androidx.compose.material3.SwitchDefaults.colors(
-                                            uncheckedColor = if (!internetEnabled) MaterialTheme.colorScheme.error else Color.Transparent
-                                        )
-                                    )
-                                    Text(
-                                        text = "Internet",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        onCheckedChange = { internetEnabled = it }
                                     )
                                 }
                             }

@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.anchorguard.client.ui.screens.DeviceLockActivity
 
 class LockCommandReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {

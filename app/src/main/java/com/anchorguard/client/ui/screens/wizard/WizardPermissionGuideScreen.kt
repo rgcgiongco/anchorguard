@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,8 +27,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material.icons.Icons
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
+import androidx.lifecycle.Lifecycle
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -96,7 +103,7 @@ fun WizardPermissionGuideScreen(
         subtitle = "AnchorGuard needs these system permissions to enforce app blocking, schedules, and remote lock.",
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(ArrowBack.Default, contentDescription = "Back")
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
             }
         }
     ) {
@@ -104,7 +111,7 @@ fun WizardPermissionGuideScreen(
             title = "Device Admin",
             description = "Enforce app blocking, remote device lock, and prevent uninstallation.",
             granted = deviceAdmin,
-            icon = if (deviceAdmin) DoneAll.Default else Warning.Default,
+            icon = if (deviceAdmin) Icons.Filled.DoneAll else Icons.Filled.Warning,
             onGrant = { checker.requestDeviceAdmin(); refreshKey += 1 }
         )
         Spacer(Modifier.height(12.dp))
@@ -112,7 +119,7 @@ fun WizardPermissionGuideScreen(
             title = "Accessibility Service",
             description = "Monitor foreground apps so blocked apps can be closed when they come to the front.",
             granted = accessibility,
-            icon = if (accessibility) DoneAll.Default else Warning.Default,
+            icon = if (accessibility) Icons.Filled.DoneAll else Icons.Filled.Warning,
             onGrant = { checker.requestAccessibility(); refreshKey += 1 }
         )
         Spacer(Modifier.height(12.dp))
@@ -120,7 +127,7 @@ fun WizardPermissionGuideScreen(
             title = "Overlay Windows",
             description = "Show the block screen when a blocked app is opened.",
             granted = overlay,
-            icon = if (overlay) DoneAll.Default else Warning.Default,
+            icon = if (overlay) Icons.Filled.DoneAll else Icons.Filled.Warning,
             onGrant = { checker.requestOverlay(); refreshKey += 1 }
         )
         Spacer(Modifier.height(12.dp))
@@ -128,7 +135,7 @@ fun WizardPermissionGuideScreen(
             title = "Battery Optimization",
             description = "Exempt AnchorGuard from battery restrictions so enforcement runs in the background.",
             granted = batteryOpt,
-            icon = if (batteryOpt) DoneAll.Default else Warning.Default,
+            icon = if (batteryOpt) Icons.Filled.DoneAll else Icons.Filled.Warning,
             onGrant = { checker.requestBatteryOptimization(); refreshKey += 1 }
         )
         Spacer(Modifier.height(24.dp))
@@ -154,22 +161,22 @@ private fun PermissionCard(
     onGrant: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.material3.Shapes.medium,
+        modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         androidx.compose.foundation.layout.Row(
-            modifier = androidx.compose.foundation.layout.Modifier.padding(12.dp).fillMaxWidth(),
+            modifier = androidx.compose.ui.Modifier.padding(12.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(24.dp)
+                modifier = androidx.compose.ui.Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {

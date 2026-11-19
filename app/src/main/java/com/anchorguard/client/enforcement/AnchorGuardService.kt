@@ -20,7 +20,9 @@ import com.anchorguard.client.auth.data.DevicePolicyRepository
 import com.anchorguard.client.auth.data.DeviceStatusResponse
 import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.network.NetworkResult
+import com.anchorguard.client.ui.screens.DeviceLockActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 

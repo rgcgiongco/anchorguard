@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +35,7 @@ fun WizardCompleteScreen(
     val store = remember { SecureSessionStore(context) }
     val pinManager = remember { PinSecurityManager(context) }
 
-    val deviceRegistered = repo.deviceId() != null && repo.deviceId().isNotBlank()
+    val deviceRegistered = repo.deviceId()?.isNotBlank() == true
     val permissionsGranted = store.allWizardPermissionsGranted()
     val paired = store.isDevicePaired()
     val pinSet = pinManager.isPinSet()
@@ -73,7 +76,11 @@ fun WizardCompleteScreen(
 
             AnchorPrimaryButton(
                 text = "Finish",
-                onClick = onFinish,
+                onClick = {
+                    store.setSetupWizardCompleted(true)
+                    store.setWizardRole(role ?: "child")
+                    onFinish()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = deviceRegistered && permissionsGranted && paired
             )

@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
@@ -15,6 +17,7 @@ import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.data.location.LocationTrackingController
 import com.anchorguard.client.ui.components.AnchorButton
 import com.anchorguard.client.ui.components.AnchorSwitch
+import com.anchorguard.client.ui.screens.ScreenScaffold
 import kotlinx.coroutines.launch
 
 @Composable
