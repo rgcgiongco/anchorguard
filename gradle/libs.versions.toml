@@ -20,8 +20,7 @@ junitExt = "1.2.1"
 espresso = "3.6.1"
 securityCrypto = "1.1.0-alpha06"
 biometric = "1.1.0"
-googlePlayServicesLocation = "23.1.0"
-googleMapsServices = "7.0.0"
+googlePlayServicesLocation = "21.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,7 +61,6 @@ androidx-security-crypto = { group = "androidx.security", name = "security-crypt
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 
 google-play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "googlePlayServicesLocation" }
-google-maps-services = { group = "com.google.maps", name = "google-maps-services", version.ref = "googleMapsServices" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }

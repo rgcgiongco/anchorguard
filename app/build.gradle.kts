@@ -114,7 +114,6 @@ dependencies {
     implementation(libs.androidx.biometric)
 
     implementation(libs.google.play.services.location)
-    implementation(libs.google.maps.services)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
