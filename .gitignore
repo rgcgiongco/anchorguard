@@ -33,6 +33,7 @@ web-console/.env.local
 web-console/node_modules/
 web-console/dist/
 web-console/.vite/
+web-console/tsconfig.tsbuildinfo
 
 # Logs/temp
 *.log
