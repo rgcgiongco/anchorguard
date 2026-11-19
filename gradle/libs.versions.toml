@@ -20,7 +20,7 @@ junitExt = "1.2.1"
 espresso = "3.6.1"
 securityCrypto = "1.1.0-alpha06"
 biometric = "1.1.0"
-googlePlayServicesLocation = "21.4.0"
+googlePlayServicesLocation = "21.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
