@@ -1,6 +1,8 @@
 package com.anchorguard.client.ui.nav
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -38,11 +40,25 @@ fun AnchorGuardNavHost(
     }
     NavHost(navController = navController, startDestination = Routes.Splash) {
         composable(Routes.Splash) {
-            SplashScreen(onFinished = {
-                navController.navigate(Routes.Welcome) {
-                    popUpTo(Routes.Splash) { inclusive = true }
+            val context = LocalContext.current
+            SplashScreen(
+                context = context,
+                onDeviceReady = {
+                    navController.navigate(Routes.ChildHome) {
+                        popUpTo(Routes.Splash) { inclusive = true }
+                    }
+                },
+                onNeedsPairing = {
+                    navController.navigate(Routes.Pairing) {
+                        popUpTo(Routes.Splash) { inclusive = true }
+                    }
+                },
+                onNeedsRegistration = {
+                    navController.navigate(Routes.Pairing) {
+                        popUpTo(Routes.Splash) { inclusive = true }
+                    }
                 }
-            })
+            )
         }
         composable(Routes.Welcome) {
             WelcomeScreen(onContinue = { navController.navigate(Routes.RoleSelection) })

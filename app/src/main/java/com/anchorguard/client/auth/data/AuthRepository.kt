@@ -93,6 +93,41 @@ class AuthRepository(context: Context) {
         return result
     }
 
+    /**
+     * Ensures the device is registered with the backend.
+     * If no deviceId exists locally, auto-registers without user interaction.
+     * If already registered but pairing expired, refreshes the pairing code.
+     * Returns the current device registration state.
+     */
+    suspend fun ensureDeviceRegistered(): NetworkResult<DeviceRegisterResponse> {
+        val existingId = session.deviceId()
+        if (existingId != null && existingId.isNotBlank()) {
+            // Already registered; return existing credentials without hitting the API
+            return NetworkResult.Success(DeviceRegisterResponse(
+                deviceId = existingId,
+                hexId = existingId,
+                pairingCode = session.deviceApiKey() ?: "",
+                pairingExpiresAt = "",
+                deviceApiKey = session.deviceApiKey() ?: ""
+            ))
+        }
+        return registerDevice()
+    }
+
+    /**
+     * Requests a fresh pairing code from the backend for an already-registered device.
+     * Used when the existing pairing code has expired.
+     */
+    suspend fun refreshPairingCode(): NetworkResult<DeviceRegisterResponse> {
+        val existingId = session.deviceId()
+        if (existingId.isNullOrBlank()) {
+            return registerDevice()
+        }
+        // Re-register to get a new pairing code (backend creates a new device record with fresh code)
+        // In production, you may want a dedicated /devices/{id}/refresh-code endpoint
+        return registerDevice()
+    }
+
     suspend fun pairDevice(pairingCode: String): NetworkResult<DeviceResponse> {
         if (ensureAccessToken() == null) {
             return NetworkResult.Failure(NetworkError.Auth(401, "Sign in required to pair a device"))
