@@ -17,7 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.anchorguard.client.BuildConfig
 import com.anchorguard.client.auth.data.AuthRepository
+import com.anchorguard.client.auth.security.SecureSessionStore
+import com.anchorguard.client.enforcement.EnforcementPermissionChecker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SplashScreen(
@@ -25,40 +29,32 @@ fun SplashScreen(
     onFinished: (() -> Unit)? = null,
     onDeviceReady: (() -> Unit)? = null,
     onNeedsPairing: (() -> Unit)? = null,
-    onNeedsRegistration: (() -> Unit)? = null
+    onNeedsRegistration: (() -> Unit)? = null,
+    onPermissionsNeeded: (() -> Unit)? = null,
+    onWizardNeeded: (() -> Unit)? = null,
+    onWizardComplete: (() -> Unit)? = null
 ) {
     val repo = remember { AuthRepository(context) }
     val scope = rememberCoroutineScope()
+    val checker = remember { EnforcementPermissionChecker(context) }
+    val store = remember { SecureSessionStore(context) }
+
+    var permissionsChecked by remember { mutableStateOf(false) }
+    var allPermissionsGranted by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         // Brief splash display for brand visibility
         delay(800)
 
-        val isPaired = repo.isDevicePaired()
-        val hasDeviceId = repo.deviceId() != null && repo.deviceId().isNotBlank()
-
-        when {
-            isPaired -> {
-                // Device is registered and paired — proceed directly to child home
-                onDeviceReady?.invoke()
-            }
-            hasDeviceId -> {
-                // Device is registered but not paired — show pairing screen
-                onNeedsPairing?.invoke()
-            }
-            else -> {
-                // Not registered — auto-register in background
-                scope.launch {
-                    try {
-                        repo.registerDevice()
-                        onNeedsPairing?.invoke()
-                    } catch (_: Exception) {
-                        // Registration failed — still show pairing screen so user can retry
-                        onNeedsPairing?.invoke()
-                    }
-                }
-            }
+        // First-run setup wizard takes precedence over the normal flow.
+        if (!store.setupWizardCompleted()) {
+            onWizardNeeded?.invoke()
+            return@LaunchedEffect
         }
+
+        // Wizard already completed — route to the role-based dashboard.
+        onWizardComplete?.invoke()
+        return@LaunchedEffect
     }
 
     Column(

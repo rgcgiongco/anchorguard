@@ -98,6 +98,65 @@ class SecureSessionStore(context: Context) {
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_DEVICE_API_KEY = "device_api_key"
         private const val KEY_DEVICE_PAIRED = "device_paired"
-        private const val KEY_PARENT_EMAIL = "parent_email"
+    private const val KEY_PARENT_EMAIL = "parent_email"
+    private const val KEY_SETUP_WIZARD_COMPLETED = "setup_wizard_completed"
+    private const val KEY_DEVICE_ADMIN_GRANTED = "device_admin_granted"
+    private const val KEY_ACCESSIBILITY_GRANTED = "accessibility_granted"
+    private const val KEY_OVERLAY_GRANTED = "overlay_granted"
+    private const val KEY_BATTERY_OPT_OUT = "battery_opt_out"
+    private const val KEY_WIZARD_ROLE = "wizard_role"
+    private const val KEY_SOS_ENABLED = "sos_enabled"
+    private const val KEY_GEOFENCE_ENABLED = "geofence_enabled"
     }
+
+    fun setupWizardCompleted(): Boolean = prefs.getBoolean(KEY_SETUP_WIZARD_COMPLETED, false)
+
+    fun setSetupWizardCompleted(completed: Boolean) {
+        prefs.edit().putBoolean(KEY_SETUP_WIZARD_COMPLETED, completed).apply()
+    }
+
+    fun setWizardRole(role: String) {
+        prefs.edit().putString(KEY_WIZARD_ROLE, role).apply()
+    }
+
+    fun wizardRole(): String? = prefs.getString(KEY_WIZARD_ROLE, null)?.takeIf { it.isNotBlank() }
+
+    fun isParentRole(): Boolean = wizardRole() == "parent"
+    fun isChildRole(): Boolean = wizardRole() == "child"
+
+    fun setDeviceAdminGranted(granted: Boolean) {
+        prefs.edit().putBoolean(KEY_DEVICE_ADMIN_GRANTED, granted).apply()
+    }
+
+    fun setAccessibilityGranted(granted: Boolean) {
+        prefs.edit().putBoolean(KEY_ACCESSIBILITY_GRANTED, granted).apply()
+    }
+
+    fun setOverlayGranted(granted: Boolean) {
+        prefs.edit().putBoolean(KEY_OVERLAY_GRANTED, granted).apply()
+    }
+
+    fun setBatteryOptOut(granted: Boolean) {
+        prefs.edit().putBoolean(KEY_BATTERY_OPT_OUT, granted).apply()
+    }
+
+    fun isDeviceAdminGranted(): Boolean = prefs.getBoolean(KEY_DEVICE_ADMIN_GRANTED, false)
+    fun isAccessibilityGranted(): Boolean = prefs.getBoolean(KEY_ACCESSIBILITY_GRANTED, false)
+    fun isOverlayGranted(): Boolean = prefs.getBoolean(KEY_OVERLAY_GRANTED, false)
+    fun isBatteryOptOut(): Boolean = prefs.getBoolean(KEY_BATTERY_OPT_OUT, false)
+
+    fun allWizardPermissionsGranted(): Boolean =
+        isDeviceAdminGranted() && isAccessibilityGranted() && isOverlayGranted() && isBatteryOptOut()
+
+    fun setSosEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SOS_ENABLED, enabled).apply()
+    }
+
+    fun isSosEnabled(): Boolean = prefs.getBoolean(KEY_SOS_ENABLED, false)
+
+    fun setGeofenceEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_GEOFENCE_ENABLED, enabled).apply()
+    }
+
+    fun isGeofenceEnabled(): Boolean = prefs.getBoolean(KEY_GEOFENCE_ENABLED, false)
 }

@@ -2,6 +2,9 @@ package com.anchorguard.client.ui.screens
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -15,7 +18,7 @@ import com.anchorguard.client.ui.components.AnchorInfoCard
 import com.anchorguard.client.ui.components.AnchorSecondaryButton
 
 @Composable
-fun ChildHomeScreen(onOpenParentGate: () -> Unit) {
+fun ChildHomeScreen(onOpenParentGate: () -> Unit, onOpenSos: () -> Unit) {
     val context = LocalContext.current
     val state by EnforcementController.state.collectAsState()
     val fg by EnforcementController.foregroundPackage.collectAsState()
@@ -45,6 +48,22 @@ fun ChildHomeScreen(onOpenParentGate: () -> Unit) {
         )
         Spacer(Modifier.height(20.dp))
         AnchorSecondaryButton(text = "Parent access", onClick = onOpenParentGate)
+        Spacer(Modifier.height(8.dp))
+        Button(
+            onClick = onOpenSos,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            androidx.compose.material3.Icon(
+                imageVector = androidx.compose.material.icons.filled.Sos.Default,
+                contentDescription = "SOS"
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "SOS — Emergency Alert")
+        }
         Spacer(Modifier.height(8.dp))
         if (state == EnforcementState.PARENT_MODE) {
             AnchorSecondaryButton(

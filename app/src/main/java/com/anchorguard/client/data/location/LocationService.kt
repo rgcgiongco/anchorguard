@@ -16,6 +16,7 @@ import com.anchorguard.client.MainActivity
 import com.anchorguard.client.R
 import com.anchorguard.client.data.local.entity.Location
 import com.anchorguard.client.data.local.dao.LocationDao
+import com.anchorguard.client.enforcement.GeofenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,6 +29,7 @@ class LocationForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        GeofenceManager.init(this)
         Log.i(TAG, "Location service created")
     }
 
@@ -86,6 +88,12 @@ class LocationForegroundService : Service() {
                 timestampMillis = androidLoc.time,
                 provider = androidLoc.provider ?: "fused"
             ))
+            // Check geofence proximity on every location fix
+            GeofenceManager.getInstance()?.onLocationUpdate(
+                androidLoc.latitude,
+                androidLoc.longitude,
+                androidLoc.time
+            )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to persist location", e)
         }

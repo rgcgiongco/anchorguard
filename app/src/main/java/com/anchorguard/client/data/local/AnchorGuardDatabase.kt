@@ -10,12 +10,14 @@ import com.anchorguard.client.BuildConfig
 import com.anchorguard.client.data.local.dao.AppPolicyDao
 import com.anchorguard.client.data.local.dao.DeviceSettingDao
 import com.anchorguard.client.data.local.dao.DeviceUserDao
+import com.anchorguard.client.data.local.dao.GeofenceDao
 import com.anchorguard.client.data.local.dao.LocationDao
 import com.anchorguard.client.data.local.dao.SyncStatusDao
 import com.anchorguard.client.data.local.dao.UsageEventDao
 import com.anchorguard.client.data.local.entity.AppPolicy
 import com.anchorguard.client.data.local.entity.DeviceSetting
 import com.anchorguard.client.data.local.entity.DeviceUser
+import com.anchorguard.client.data.local.entity.Geofence
 import com.anchorguard.client.data.local.entity.Location
 import com.anchorguard.client.data.local.entity.SyncStatus
 import com.anchorguard.client.data.local.entity.UsageEvent
@@ -27,9 +29,10 @@ import com.anchorguard.client.data.local.entity.UsageEvent
         DeviceSetting::class,
         Location::class,
         UsageEvent::class,
-        SyncStatus::class
+        SyncStatus::class,
+        Geofence::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AnchorGuardDatabase : RoomDatabase() {
@@ -39,6 +42,7 @@ abstract class AnchorGuardDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun usageEventDao(): UsageEventDao
     abstract fun syncStatusDao(): SyncStatusDao
+    abstract fun geofenceDao(): GeofenceDao
 
     companion object {
         const val DATABASE_NAME = "anchorguard.db"
@@ -78,6 +82,25 @@ abstract class AnchorGuardDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS geofences (" +
+                    "id TEXT NOT NULL PRIMARY KEY," +
+                    "device_id TEXT NOT NULL," +
+                    "zone_id TEXT NOT NULL," +
+                    "name TEXT NOT NULL," +
+                    "latitude REAL NOT NULL," +
+                    "longitude REAL NOT NULL," +
+                    "radius_meters INTEGER NOT NULL," +
+                    "synced INTEGER NOT NULL DEFAULT 0," +
+                    "CREATE INDEX IF NOT EXISTS index_geofences_device_id ON geofences(device_id)," +
+                    "CREATE INDEX IF NOT EXISTS index_geofences_synced ON geofences(synced)" +
+                    ")"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: AnchorGuardDatabase? = null
 
@@ -92,7 +115,7 @@ abstract class AnchorGuardDatabase : RoomDatabase() {
                 context.applicationContext,
                 AnchorGuardDatabase::class.java,
                 DATABASE_NAME
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             if (BuildConfig.DEBUG) {
                 builder.fallbackToDestructiveMigration()
             }

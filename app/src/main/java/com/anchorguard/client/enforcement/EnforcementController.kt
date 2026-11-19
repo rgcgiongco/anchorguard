@@ -44,4 +44,22 @@ object EnforcementController {
     internal fun updateForegroundPackage(pkg: String?) {
         _foregroundPackage.value = pkg
     }
+
+    fun syncBlockedPackages(context: Context, blockedPackageNames: Set<String>) {
+        val appCtx = context.applicationContext
+        PolicyEngine(appCtx).syncFromAppPolicies(blockedPackageNames)
+        AnchorGuardService.requestRefresh(appCtx)
+    }
+
+    fun syncSchedule(context: Context, weeklyScheduleJson: String?) {
+        val appCtx = context.applicationContext
+        PolicyEngine(appCtx).setWeeklySchedule(weeklyScheduleJson)
+        AnchorGuardService.requestRefresh(appCtx)
+    }
+
+    fun syncAppDailyLimit(context: Context, packageName: String, minutes: Int?) {
+        val appCtx = context.applicationContext
+        PolicyEngine(appCtx).setAppDailyLimit(packageName, minutes)
+        AnchorGuardService.requestRefresh(appCtx)
+    }
 }

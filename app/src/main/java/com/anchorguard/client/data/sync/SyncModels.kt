@@ -80,3 +80,11 @@ data class LocationBatchResponse(
     val rejectedIds: List<String> = emptyList(),
     val message: String? = null
 )
+
+data class GeofenceZoneDto(
+    val id: String,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val radiusMeters: Int
+)

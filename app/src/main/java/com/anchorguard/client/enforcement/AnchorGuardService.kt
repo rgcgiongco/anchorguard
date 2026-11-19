@@ -9,17 +9,28 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.anchorguard.client.MainActivity
 import com.anchorguard.client.R
+import com.anchorguard.client.auth.data.DevicePolicyRepository
+import com.anchorguard.client.auth.data.DeviceStatusResponse
+import com.anchorguard.client.network.NetworkConfig
+import com.anchorguard.client.network.NetworkResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AnchorGuardService : Service() {
 
     private lateinit var policyEngine: PolicyEngine
     private var watchdog: AppWatchdog? = null
     private var screenStateReceiver: ScreenStateReceiver? = null
+    private var lockCheckJob: kotlinx.coroutines.Job? = null
+    private val lockScope = kotlinx.coroutines.CoroutineScope(Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
@@ -27,6 +38,7 @@ class AnchorGuardService : Service() {
         createNotificationChannel()
         watchdog = AppWatchdog(applicationContext) { pkg -> evaluate(pkg) }
         registerScreenReceiver()
+        startLockCheck()
         Log.i(TAG, "Service created")
     }
 
@@ -53,7 +65,7 @@ class AnchorGuardService : Service() {
                 evaluate(EnforcementController.foregroundPackage.value)
             }
         }
-        return START_REDELIVER_INTENT
+        return START_STICKY
     }
 
     private fun evaluate(pkg: String?) {
@@ -115,12 +127,64 @@ class AnchorGuardService : Service() {
     override fun onDestroy() {
         transitionToIdle()
         unregisterScreenReceiver()
+        stopLockCheck()
         watchdog = null
         Log.i(TAG, "Service destroyed")
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun startLockCheck() {
+        stopLockCheck()
+        lockCheckJob = lockScope.launch {
+            while (isActive) {
+                try {
+                    checkLockState()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Lock check failed", e)
+                }
+                // Poll every 30 seconds
+                kotlinx.coroutines.delay(30_000L)
+            }
+        }
+    }
+
+    private fun stopLockCheck() {
+        lockCheckJob?.cancel()
+        lockCheckJob = null
+    }
+
+    private suspend fun checkLockState() {
+        val deviceId = NetworkConfig(applicationContext).deviceId() ?: return
+        val repo = DevicePolicyRepository(applicationContext)
+        val result = withContext(Dispatchers.Default) {
+            repo.getDeviceStatus(deviceId)
+        }
+        when (result) {
+            is NetworkResult.Success -> {
+                val status = result.data
+                if (status.isLocked) {
+                    showLockScreen(applicationContext, "Device locked by parent")
+                }
+            }
+            is NetworkResult.Failure -> {
+                Log.w(TAG, "Failed to check lock state: ${result.error.userMessage()}")
+            }
+        }
+    }
+
+    private fun showLockScreen(context: Context, reason: String) {
+        val intent = Intent(context, DeviceLockActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("lock_reason", reason)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to show lock screen", e)
+        }
+    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

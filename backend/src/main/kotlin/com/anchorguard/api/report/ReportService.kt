@@ -54,4 +54,28 @@ class ReportService(
             listOf(UsageAggregateResponse(deviceId, packageName, rows.size.toLong(), start, end))
         }
     }
+
+    fun exportUsageCsv(
+        principal: AuthPrincipal,
+        deviceId: UUID,
+        from: Instant?,
+        to: Instant?
+    ): String {
+        deviceService.ownedDevice(principal, deviceId)
+        val end = to ?: Instant.now()
+        val start = from ?: end.minus(7, ChronoUnit.DAYS)
+        val rows = events.findAllByDeviceIdAndOccurredAtBetween(deviceId, start, end)
+
+        val sb = StringBuilder()
+        sb.append("package_name,event_count,total_duration_ms,first_seen,last_seen\n")
+
+        val grouped = rows.groupBy { it.packageName }
+        for ((pkg, evts) in grouped.sortedByDescending { it.value.size }) {
+            val totalDuration = evts.filter { it.durationMs != null }.map { it.durationMs!! }.sum()
+            val firstSeen = evts.minByOrNull { it.occurredAt }?.occurredAt?.toString() ?: ""
+            val lastSeen = evts.maxByOrNull { it.occurredAt }?.occurredAt?.toString() ?: ""
+            sb.append("$pkg,${evts.size},$totalDuration,$firstSeen,$lastSeen\n")
+        }
+        return sb.toString()
+    }
 }

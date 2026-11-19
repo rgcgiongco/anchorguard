@@ -1,6 +1,7 @@
 package com.anchorguard.api.location
 
 import com.anchorguard.api.common.NotFoundException
+import com.anchorguard.api.device.DeviceService
 import com.anchorguard.api.security.AuthPrincipal
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -12,7 +13,11 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/v1")
-class LocationController(private val locationService: LocationService) {
+class LocationController(
+    private val locationService: LocationService,
+    private val deviceService: DeviceService,
+    private val zoneRepository: GeofenceZoneRepository
+) {
 
     @PostMapping("/locations/batch")
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -22,6 +27,16 @@ class LocationController(private val locationService: LocationService) {
     ): BatchIngestResponse {
         val count = locationService.ingestBatch(req.deviceId, apiKey, req)
         return BatchIngestResponse(count)
+    }
+
+    @GetMapping("/devices/{id}/geofences")
+    @ResponseStatus(HttpStatus.OK)
+    fun listGeofencesDevice(
+        @RequestHeader("X-Device-Key", required = false) apiKey: String?,
+        @PathVariable id: UUID
+    ): List<GeofenceZone> {
+        val device = deviceService.deviceByIdWithKey(id, apiKey)
+        return zoneRepository.findAllByDeviceId(device.id)
     }
 
     @GetMapping("/devices/{id}/locations")

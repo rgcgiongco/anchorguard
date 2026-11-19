@@ -4,6 +4,8 @@ import android.content.Context
 import com.anchorguard.client.BuildConfig
 import com.anchorguard.client.auth.data.AuthApi
 import com.anchorguard.client.auth.data.AuthTokensResponse
+import com.anchorguard.client.auth.data.DeviceManagementApi
+import com.anchorguard.client.auth.data.DevicePolicyApi
 import com.anchorguard.client.auth.data.RefreshRequest
 import com.anchorguard.client.data.sync.SyncApi
 import okhttp3.OkHttpClient
@@ -25,6 +27,8 @@ object NetworkModule {
     @Volatile private var cachedRetrofit: Retrofit? = null
     @Volatile private var cachedAuthApi: AuthApi? = null
     @Volatile private var cachedSyncApi: SyncApi? = null
+    @Volatile private var cachedDevicePolicyApi: DevicePolicyApi? = null
+    @Volatile private var cachedDeviceManagementApi: DeviceManagementApi? = null
 
     private interface RefreshAuthApi {
         @POST("auth/refresh")
@@ -39,6 +43,16 @@ object NetworkModule {
     fun syncApi(context: Context): SyncApi {
         ensure(context)
         return cachedSyncApi!!
+    }
+
+    fun devicePolicyApi(context: Context): DevicePolicyApi {
+        ensure(context)
+        return cachedDevicePolicyApi!!
+    }
+
+    fun deviceManagementApi(context: Context): DeviceManagementApi {
+        ensure(context)
+        return cachedDeviceManagementApi!!
     }
 
     fun retrofit(context: Context): Retrofit {
@@ -95,6 +109,8 @@ object NetworkModule {
         cachedRetrofit = retrofit
         cachedAuthApi = retrofit.create(AuthApi::class.java)
         cachedSyncApi = retrofit.create(SyncApi::class.java)
+        cachedDevicePolicyApi = retrofit.create(DevicePolicyApi::class.java)
+        cachedDeviceManagementApi = retrofit.create(DeviceManagementApi::class.java)
     }
 
     fun invalidate() {
@@ -102,8 +118,10 @@ object NetworkModule {
             cachedBaseUrl = null
             cachedClient = null
             cachedRetrofit = null
-            cachedAuthApi = null
-            cachedSyncApi = null
+        cachedAuthApi = null
+        cachedSyncApi = null
+        cachedDevicePolicyApi = null
+        cachedDeviceManagementApi = null
         }
     }
 

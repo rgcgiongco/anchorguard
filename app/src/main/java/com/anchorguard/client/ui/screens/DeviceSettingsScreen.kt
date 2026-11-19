@@ -11,17 +11,25 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.data.location.LocationTrackingController
-import com.anchorguard.client.ui.components.AnchorInfoCard
+import com.anchorguard.client.ui.components.AnchorButton
 import com.anchorguard.client.ui.components.AnchorSwitch
 import kotlinx.coroutines.launch
 
 @Composable
-fun DeviceSettingsScreen() {
+fun DeviceSettingsScreen(
+    deviceId: String? = null,
+    onOpenAppList: () -> Unit = {},
+    onOpenSchedules: () -> Unit = {},
+    onOpenPerAppLimits: () -> Unit = {}
+) {
     val context = LocalContext.current
+    val authRepo = remember { AuthRepository(context) }
     val controller = remember { LocationTrackingController.init(context) }
     val scope = rememberCoroutineScope()
     var trackingEnabled by remember { mutableStateOf(false) }
+    val effectiveDeviceId = remember(deviceId) { deviceId ?: authRepo.deviceId() ?: "" }
 
     LaunchedEffect(Unit) {
         scope.launch {
@@ -47,10 +55,22 @@ fun DeviceSettingsScreen() {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(12.dp))
-        AnchorInfoCard(title = "App allow list", body = "Approve or block installed apps (Module 04/05 integration).")
+        AnchorButton(
+            text = "App allow list",
+            onClick = onOpenAppList,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(Modifier.height(12.dp))
-        AnchorInfoCard(title = "Schedules", body = "Daily/weekly schedules and bedtime windows placeholder.")
+        AnchorButton(
+            text = "Schedules",
+            onClick = onOpenSchedules,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(Modifier.height(12.dp))
-        AnchorInfoCard(title = "Per-app limits", body = "Time limits and internet toggles per app placeholder.")
+        AnchorButton(
+            text = "Per-app limits",
+            onClick = onOpenPerAppLimits,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

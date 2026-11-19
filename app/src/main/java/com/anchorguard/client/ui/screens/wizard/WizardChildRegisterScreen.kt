@@ -1,0 +1,79 @@
+package com.anchorguard.client.ui.screens.wizard
+
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.anchorguard.client.auth.data.AuthRepository
+import com.anchorguard.client.network.NetworkResult
+import com.anchorguard.client.ui.components.AnchorPrimaryButton
+import kotlinx.coroutines.launch
+
+@Composable
+fun WizardChildRegisterScreen(
+    onRegistered: () -> Unit,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val repo = remember { AuthRepository(context) }
+    var busy by remember { mutableStateOf(false) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (busy) return@LaunchedEffect
+        busy = true
+        error = null
+        scope.launch {
+            when (val r = repo.registerDevice()) {
+                is NetworkResult.Success -> onRegistered()
+                is NetworkResult.Failure -> {
+                    error = r.error.userMessage()
+                    busy = false
+                }
+            }
+        }
+    }
+
+    ScreenScaffold(
+        title = "Registering device",
+        subtitle = "This child device is being registered with your AnchorGuard account."
+    ) {
+        if (busy) {
+            Text(text = "Registering this device…", style = MaterialTheme.typography.bodyLarge)
+        }
+        if (error != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(error!!, color = MaterialTheme.colorScheme.error)
+            Spacer(Modifier.height(12.dp))
+            AnchorPrimaryButton(
+                text = "Retry",
+                onClick = {
+                    error = null
+                    busy = true
+                    scope.launch {
+                        when (val r = repo.registerDevice()) {
+                            is NetworkResult.Success -> onRegistered()
+                            is NetworkResult.Failure -> {
+                                error = r.error.userMessage()
+                                busy = false
+                            }
+                        }
+                    }
+                },
+                enabled = !busy
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onBack) { Text("Back") }
+    }
+}

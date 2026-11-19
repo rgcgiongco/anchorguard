@@ -6,8 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.anchorguard.client.data.sync.SyncScheduler
 import com.anchorguard.client.enforcement.BlockOverlayView
+import com.anchorguard.client.enforcement.UsageReporter
 import com.anchorguard.client.ui.nav.AnchorGuardNavHost
 import com.anchorguard.client.ui.theme.AnchorGuardTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,6 +23,11 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleIntent(intent)
+
+        // Initialize usage reporter for app usage tracking
+        UsageReporter.init(this)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(UsageReporter.getInstance()!!)
+
         setContent {
             AnchorGuardTheme {
                 AnchorGuardNavHost(openParentGateTick = openParentGateTick.intValue)

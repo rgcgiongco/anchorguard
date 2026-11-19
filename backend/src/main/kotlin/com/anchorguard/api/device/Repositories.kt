@@ -12,3 +12,7 @@ interface DeviceRepository : JpaRepository<Device, UUID> {
 interface DeviceUserRepository : JpaRepository<DeviceUser, UUID> {
     fun findAllByDeviceId(deviceId: UUID): List<DeviceUser>
 }
+
+interface SosEventRepository : JpaRepository<SosEvent, UUID> {
+    fun findAllByDeviceIdOrderByOccurredAtDesc(deviceId: UUID): List<SosEvent>
+}

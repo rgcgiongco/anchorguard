@@ -15,6 +15,7 @@ import java.util.UUID
 @Service
 class DeviceService(
     private val devices: DeviceRepository,
+    private val sosEvents: SosEventRepository,
     @Value("\${anchorguard.security.pairing-code-minutes}") private val pairingMinutes: Long
 ) {
     private val random = SecureRandom()
@@ -41,6 +42,29 @@ class DeviceService(
             )
         )
         return DeviceRegisterResponse(device.id, device.hexId, pairingCode, device.pairingExpiresAt!!, apiKey)
+    }
+
+    @Transactional
+    fun createChild(principal: AuthPrincipal, req: DeviceCreateRequest): DeviceResponse {
+        val now = Instant.now()
+        val device = devices.save(
+            Device(
+                hexId = generateHexId(),
+                name = req.name?.trim()?.takeIf { it.isNotEmpty() } ?: "Child Device",
+                model = req.model,
+                manufacturer = req.manufacturer,
+                androidId = null,
+                appVersion = null,
+                apiKeyHash = null,
+                pairingCode = null,
+                pairingExpiresAt = null,
+                parentId = principal.parentId,
+                isOnline = false,
+                lastSeen = now,
+                createdAt = now
+            )
+        )
+        return devices.save(device).toResponse()
     }
 
     @Transactional
@@ -78,6 +102,27 @@ class DeviceService(
     }
 
     @Transactional
+    fun lock(principal: AuthPrincipal, id: UUID, reason: String?): MessageResponse {
+        val device = ownedDevice(principal, id)
+        device.isLocked = true
+        devices.save(device)
+        return MessageResponse("Device locked")
+    }
+
+    @Transactional
+    fun unlock(principal: AuthPrincipal, id: UUID): MessageResponse {
+        val device = ownedDevice(principal, id)
+        device.isLocked = false
+        devices.save(device)
+        return MessageResponse("Device unlocked")
+    }
+
+    fun getStatus(principal: AuthPrincipal, id: UUID): DeviceStatusResponse {
+        val device = ownedDevice(principal, id)
+        return DeviceStatusResponse(device.id, device.isLocked, device.lastSeen, device.isOnline)
+    }
+
+    @Transactional
     fun heartbeat(deviceId: UUID, apiKey: String?, req: HeartbeatRequest): MessageResponse {
         val device = devices.findById(deviceId).orElseThrow { NotFoundException("Device not found") }
         verifyDeviceKey(device, apiKey)
@@ -86,6 +131,42 @@ class DeviceService(
         device.lastSeen = Instant.now()
         devices.save(device)
         return MessageResponse("ok")
+    }
+
+    @Transactional
+    fun sos(deviceId: UUID, apiKey: String?, req: SosEventRequest): SosEventResponse {
+        val device = devices.findById(deviceId).orElseThrow { NotFoundException("Device not found") }
+        verifyDeviceKey(device, apiKey)
+        val now = Instant.now()
+        val event = sosEvents.save(
+            SosEvent(
+                deviceId = device.id,
+                latitude = req.latitude,
+                longitude = req.longitude,
+                accuracyMeters = req.accuracyMeters,
+                occurredAt = now
+            )
+        )
+        return SosEventResponse(event.id, event.deviceId, event.latitude, event.longitude, event.accuracyMeters, event.occurredAt, event.acknowledged)
+    }
+
+    fun sosList(deviceId: UUID): SosEventListResponse {
+        val events = sosEvents.findAllByDeviceIdOrderByOccurredAtDesc(deviceId)
+        return SosEventListResponse(
+            deviceId = deviceId,
+            events = events.map { e ->
+                SosEventResponse(e.id, e.deviceId, e.latitude, e.longitude, e.accuracyMeters, e.occurredAt, e.acknowledged)
+            }
+        )
+    }
+
+    @Transactional
+    fun acknowledgeSos(deviceId: UUID, sosId: UUID): MessageResponse {
+        val event = sosEvents.findById(sosId).orElseThrow { NotFoundException("SOS event not found") }
+        if (event.deviceId != deviceId) throw ForbiddenException("Access denied")
+        event.acknowledged = true
+        sosEvents.save(event)
+        return MessageResponse("SOS acknowledged")
     }
 
     fun ownedDevice(principal: AuthPrincipal, id: UUID): Device {
@@ -123,6 +204,7 @@ fun Device.toResponse() = DeviceResponse(
 fun Device.toDetailResponse() = DeviceDetailResponse(
     id = id, hexId = hexId, name = name, model = model, manufacturer = manufacturer,
     androidId = androidId, appVersion = appVersion, lastSeen = lastSeen, isOnline = isOnline,
-    isPaired = parentId != null, pairingCode = pairingCode, pairingExpiresAt = pairingExpiresAt,
+    isPaired = parentId != null, isLocked = isLocked,
+    pairingCode = pairingCode, pairingExpiresAt = pairingExpiresAt,
     createdAt = createdAt
 )

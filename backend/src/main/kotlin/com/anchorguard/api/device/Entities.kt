@@ -21,6 +21,7 @@ class Device(
     @Column(name = "is_online") var isOnline: Boolean = false,
     @Column(name = "pairing_code") var pairingCode: String? = null,
     @Column(name = "pairing_expires_at") var pairingExpiresAt: Instant? = null,
+    @Column(name = "is_locked") var isLocked: Boolean = false,
     @Column(name = "created_at") var createdAt: Instant = Instant.now()
 )
 
@@ -41,4 +42,16 @@ class DeviceUser(
 
     @Column(name = "pin_hash") var pinHash: String? = null,
     @Column(name = "created_at") var createdAt: Instant = Instant.now()
+)
+
+@Entity
+@Table(name = "sos_events")
+class SosEvent(
+    @Id val id: UUID = UUID.randomUUID(),
+    @Column(name = "device_id", nullable = false) var deviceId: UUID,
+    @Column(name = "latitude") var latitude: Double? = null,
+    @Column(name = "longitude") var longitude: Double? = null,
+    @Column(name = "accuracy_meters") var accuracyMeters: Int? = null,
+    @Column(name = "occurred_at") var occurredAt: Instant = Instant.now(),
+    @Column(name = "acknowledged") var acknowledged: Boolean = false
 )
