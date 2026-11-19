@@ -131,8 +131,8 @@ class PolicyEngine(context: Context) {
         private const val KEY_PARENT_MODE = "parent_mode"
         private const val KEY_BLOCK_INTERVAL_MS = "block_interval_ms"
         private const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
-        private const val KEY_APP_DAILY_LIMIT = "app_daily_limit_"
-        private const val KEY_APP_USAGE_TODAY = "app_usage_today_"
+        private const val KEY_APP_DAILY_LIMIT_ = "app_daily_limit_"
+        private const val KEY_APP_USAGE_TODAY_ = "app_usage_today_"
         private const val OWN_PACKAGE = "com.anchorguard.client"
         const val DEFAULT_BLOCK_INTERVAL_MS = 500L
         const val MIN_BLOCK_INTERVAL_MS = 100L

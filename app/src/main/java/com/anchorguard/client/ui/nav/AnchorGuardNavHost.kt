@@ -2,8 +2,13 @@ package com.anchorguard.client.ui.nav
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -77,22 +82,8 @@ fun AnchorGuardNavHost(
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 },
-                onPermissionsNeeded = {
-                    navController.navigate(Routes.PermissionGuide) {
-                        popUpTo(Routes.Splash) { inclusive = true }
-                    }
-                },
                 onWizardNeeded = {
                     navController.navigate(Routes.WizardWelcome) {
-                        popUpTo(Routes.Splash) { inclusive = true }
-                    }
-                },
-                onWizardComplete = {
-                    val target = when {
-                        wizardRole == "parent" -> Routes.ParentDashboard
-                        else -> Routes.ChildHome
-                    }
-                    navController.navigate(target) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
                 }
@@ -292,7 +283,10 @@ fun AnchorGuardNavHost(
             })
         }
         composable(Routes.Sos) {
-            SOSScreen(onBack = { navController.popBackStack() })
+            SOSScreen(
+                onBack = { navController.popBackStack() },
+                onSosPressed = { /* SOS pressed - handled by nav host */ }
+            )
         }
         composable(Routes.DeviceSettings) {
             DeviceSettingsScreen(

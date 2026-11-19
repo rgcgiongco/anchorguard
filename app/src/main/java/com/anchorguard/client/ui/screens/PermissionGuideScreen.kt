@@ -3,9 +3,11 @@ package com.anchorguard.client.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,22 +22,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.anchorguard.client.enforcement.AnchorGuardAccessibilityService
-import com.anchorguard.client.enforcement.AnchorGuardDeviceAdminReceiver
 import com.anchorguard.client.enforcement.EnforcementPermissionChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.material3.Scaffold
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.doneAll
-import androidx.compose.material.icons.filled.warning
+import androidx.compose.material3.Button
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,32 +44,26 @@ fun PermissionGuideScreen(onAllGranted: () -> Unit) {
     val snackbarHostState = remember { SnackbarHostState() }
     val checker = remember { EnforcementPermissionChecker(context) }
 
-    var deviceAdmin by remember { mutableStateOf(false) }
-    var accessibility by remember { mutableStateOf(false) }
-    var overlay by remember { mutableStateOf(false) }
-    var batteryOpt by remember { mutableStateOf(false) }
-    var isChecking by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        refreshStatus()
-    }
+    val deviceAdminState = remember { mutableStateOf(false) }
+    val accessibilityState = remember { mutableStateOf(false) }
+    val overlayState = remember { mutableStateOf(false) }
+    val batteryOptState = remember { mutableStateOf(false) }
+    val isCheckingState = remember { mutableStateOf(false) }
 
     fun refreshStatus() {
-        isChecking = true
+        isCheckingState.value = true
         scope.launch {
-            val results = withContext(Dispatchers.Default) {
-                checker.isDeviceAdminActive() to
-                checker.isAccessibilityServiceEnabled() to
-                checker.isOverlayPermissionGranted() to
-                checker.isBatteryOptimizationExempt()
-            }
-            deviceAdmin = results.first
-            accessibility = results.second.first
-            overlay = results.second.second.first
-            batteryOpt = results.second.second.second
-            isChecking = false
+            val admin = withContext(Dispatchers.Default) { checker.isDeviceAdminActive() }
+            val access = withContext(Dispatchers.Default) { checker.isAccessibilityServiceEnabled() }
+            val overl = withContext(Dispatchers.Default) { checker.isOverlayPermissionGranted() }
+            val batt = withContext(Dispatchers.Default) { checker.isBatteryOptimizationExempt() }
+            deviceAdminState.value = admin
+            accessibilityState.value = access
+            overlayState.value = overl
+            batteryOptState.value = batt
+            isCheckingState.value = false
 
-            if (deviceAdmin && accessibility && overlay && batteryOpt) {
+            if (admin && access && overl && batt) {
                 scope.launch {
                     onAllGranted()
                 }
@@ -78,7 +71,11 @@ fun PermissionGuideScreen(onAllGranted: () -> Unit) {
         }
     }
 
-    val allGranted = deviceAdmin && accessibility && overlay && batteryOpt
+    val allGranted = deviceAdminState.value && accessibilityState.value && overlayState.value && batteryOptState.value
+
+    LaunchedEffect(Unit) {
+        refreshStatus()
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -91,7 +88,10 @@ fun PermissionGuideScreen(onAllGranted: () -> Unit) {
                 ),
                 navigationIcon = {
                     androidx.compose.material3.IconButton(onClick = { /* handled by nav host */ }) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.ArrowBack.Default, contentDescription = "Back")
+                        Icon(
+                            painter = ColorPainter(MaterialTheme.colorScheme.primary),
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )
@@ -119,45 +119,45 @@ fun PermissionGuideScreen(onAllGranted: () -> Unit) {
             PermissionCard(
                 title = "Device Admin",
                 description = "Allows AnchorGuard to enforce app blocking, remote device lock, and prevent uninstallation.",
-                granted = deviceAdmin,
-                icon = if (deviceAdmin) androidx.compose.material.icons.doneAll.Default else androidx.compose.material.icons.warning.Default,
+                granted = deviceAdminState.value,
+                iconPainter = if (deviceAdminState.value) ColorPainter(MaterialTheme.colorScheme.primary) else ColorPainter(MaterialTheme.colorScheme.error),
                 onGrant = { checker.requestDeviceAdmin() }
             )
             PermissionCard(
                 title = "Accessibility Service",
                 description = "Monitors foreground apps so AnchorGuard can block apps when they come to the front.",
-                granted = accessibility,
-                icon = if (accessibility) androidx.compose.material.icons.doneAll.Default else androidx.compose.material.icons.warning.Default,
+                granted = accessibilityState.value,
+                iconPainter = if (accessibilityState.value) ColorPainter(MaterialTheme.colorScheme.primary) else ColorPainter(MaterialTheme.colorScheme.error),
                 onGrant = { checker.requestAccessibility() }
             )
             PermissionCard(
                 title = "Overlay Windows",
                 description = "Shows the block screen when a blocked app is opened.",
-                granted = overlay,
-                icon = if (overlay) androidx.compose.material.icons.doneAll.Default else androidx.compose.material.icons.warning.Default,
+                granted = overlayState.value,
+                iconPainter = if (overlayState.value) ColorPainter(MaterialTheme.colorScheme.primary) else ColorPainter(MaterialTheme.colorScheme.error),
                 onGrant = { checker.requestOverlay() }
             )
             PermissionCard(
                 title = "Battery Optimization",
                 description = "Exempts AnchorGuard from battery restrictions so enforcement runs reliably in the background.",
-                granted = batteryOpt,
-                icon = if (batteryOpt) androidx.compose.material.icons.doneAll.Default else androidx.compose.material.icons.warning.Default,
+                granted = batteryOptState.value,
+                iconPainter = if (batteryOptState.value) ColorPainter(MaterialTheme.colorScheme.primary) else ColorPainter(MaterialTheme.colorScheme.error),
                 onGrant = { checker.requestBatteryOptimization() }
             )
 
             Spacer(Modifier.height(16.dp))
 
-            if (isChecking) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            if (isCheckingState.value) {
+                CircularProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally))
             } else if (!allGranted) {
-                androidx.compose.material3.Button(
+                Button(
                     onClick = { refreshStatus() },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = "Re-check Permissions")
                 }
             } else {
-                androidx.compose.material3.Button(
+                Button(
                     onClick = { onAllGranted() },
                     modifier = Modifier.fillMaxWidth(),
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -175,25 +175,24 @@ private fun PermissionCard(
     title: String,
     description: String,
     granted: Boolean,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconPainter: androidx.compose.ui.graphics.painter.Painter,
     onGrant: () -> Unit
 ) {
     androidx.compose.material3.Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.material3.Shapes.medium,
+        shape = MaterialTheme.shapes.medium,
         colors = androidx.compose.material3.CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
         elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         androidx.compose.foundation.layout.Row(
-            modifier = androidx.compose.foundation.layout Modifier.padding(12.dp).fillMaxWidth(),
+            modifier = Modifier.padding(12.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = icon,
+                painter = iconPainter,
                 contentDescription = null,
-                tint = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))

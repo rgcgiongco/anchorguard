@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,10 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.anchorguard.client.BuildConfig
 import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.auth.security.SecureSessionStore
-import com.anchorguard.client.enforcement.EnforcementPermissionChecker
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun SplashScreen(
@@ -30,31 +29,47 @@ fun SplashScreen(
     onDeviceReady: (() -> Unit)? = null,
     onNeedsPairing: (() -> Unit)? = null,
     onNeedsRegistration: (() -> Unit)? = null,
-    onPermissionsNeeded: (() -> Unit)? = null,
-    onWizardNeeded: (() -> Unit)? = null,
-    onWizardComplete: (() -> Unit)? = null
+    onWizardNeeded: (() -> Unit)? = null
 ) {
     val repo = remember { AuthRepository(context) }
-    val scope = rememberCoroutineScope()
-    val checker = remember { EnforcementPermissionChecker(context) }
     val store = remember { SecureSessionStore(context) }
-
-    var permissionsChecked by remember { mutableStateOf(false) }
-    var allPermissionsGranted by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         // Brief splash display for brand visibility
         delay(800)
 
-        // First-run setup wizard takes precedence over the normal flow.
+        // Check if setup wizard has been completed
         if (!store.setupWizardCompleted()) {
             onWizardNeeded?.invoke()
             return@LaunchedEffect
         }
 
-        // Wizard already completed — route to the role-based dashboard.
-        onWizardComplete?.invoke()
-        return@LaunchedEffect
+        val isPaired = repo.isDevicePaired()
+        val hasDeviceId = repo.deviceId()?.isNotBlank() == true
+
+        when {
+            isPaired -> {
+                // Device is registered and paired — proceed directly to child home
+                onDeviceReady?.invoke()
+            }
+            hasDeviceId -> {
+                // Device is registered but not paired — show pairing screen
+                onNeedsPairing?.invoke()
+            }
+            else -> {
+                // Not registered — auto-register in background
+                scope.launch {
+                    try {
+                        repo.registerDevice()
+                        onNeedsPairing?.invoke()
+                    } catch (_: Exception) {
+                        // Registration failed — still show pairing screen so user can retry
+                        onNeedsPairing?.invoke()
+                    }
+                }
+            }
+        }
     }
 
     Column(

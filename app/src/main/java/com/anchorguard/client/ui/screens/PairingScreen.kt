@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,7 +43,7 @@ fun PairingScreen(
     var registeredCode by remember { mutableStateOf<String?>(null) }
     var registeredExpiresAtMs by remember { mutableLongStateOf(0L) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    val online by ConnectivityState.online.collectAsStateWithLifecycleCompat()
+    val online by ConnectivityState.online.collectAsState()
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -119,7 +120,7 @@ fun PairingScreen(
                 },
                 enabled = !busy && online
             )
-        } else if (!isDevicePaired && !online.not()) {
+        } else if (!isDevicePaired && online) {
             // Device not registered yet - show registration message
             AnchorInfoCard(
                 title = "Device registration",

@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.Icons
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,8 +48,6 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.material3.Scaffold
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Save
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 
@@ -71,15 +70,6 @@ fun ScheduleScreen(onBack: () -> Unit) {
         "thursday" to "Thursday", "friday" to "Friday", "saturday" to "Saturday", "sunday" to "Sunday"
     )
 
-    LaunchedEffect(Unit) {
-        scope.launch {
-            deviceId = config.deviceId()
-            if (deviceId != null) {
-                loadSchedule(deviceId!!)
-            }
-        }
-    }
-
     fun loadSchedule(deviceId: String) {
         isLoading = true
         scope.launch {
@@ -88,8 +78,9 @@ fun ScheduleScreen(onBack: () -> Unit) {
             }
             isLoading = false
             when (result) {
-                is NetworkResult.Success -> {
-                    val json = result.data.weeklySchedule
+                is NetworkResult.Success<*> -> {
+                    val resp = (result as NetworkResult.Success<ScheduleResponse>).data
+                    val json = resp.weeklySchedule
                     if (json != null) {
                         weeklySchedule = parseSchedule(json)
                         scheduleEnabled = true
@@ -102,6 +93,20 @@ fun ScheduleScreen(onBack: () -> Unit) {
         }
     }
 
+    fun buildScheduleJson(): String {
+        val obj = JsonObject()
+        for ((day, sched) in weeklySchedule) {
+            val dayObj = JsonObject()
+            dayObj.addProperty("enabled", sched.enabled)
+            dayObj.addProperty("startHour", sched.startHour)
+            dayObj.addProperty("startMinute", sched.startMinute)
+            dayObj.addProperty("endHour", sched.endHour)
+            dayObj.addProperty("endMinute", sched.endMinute)
+            obj.add(day, dayObj)
+        }
+        return Gson().toJson(obj)
+    }
+
     fun saveSchedule() {
         val device = deviceId ?: return
         isLoading = true
@@ -112,7 +117,7 @@ fun ScheduleScreen(onBack: () -> Unit) {
             }
             isLoading = false
             when (result) {
-                is NetworkResult.Success -> {
+                is NetworkResult.Success<*> -> {
                     EnforcementController.syncSchedule(context, json)
                     scope.launch {
                         snackbarHostState.showSnackbar("Schedule saved")
@@ -134,6 +139,15 @@ fun ScheduleScreen(onBack: () -> Unit) {
         }.toMap()
     }
 
+    LaunchedEffect(Unit) {
+        scope.launch {
+            deviceId = config.deviceId()
+            if (deviceId != null) {
+                loadSchedule(deviceId!!)
+            }
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
@@ -145,7 +159,7 @@ fun ScheduleScreen(onBack: () -> Unit) {
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.ArrowBack.Default, contentDescription = "Back")
+                        Icon(painter = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primary), contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -153,7 +167,7 @@ fun ScheduleScreen(onBack: () -> Unit) {
                         onClick = { saveSchedule() },
                         enabled = deviceId != null && !isLoading
                     ) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.Save.Default, contentDescription = "Save")
+                        Icon(painter = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.primary), contentDescription = "Save")
                     }
                 }
             )
@@ -166,13 +180,9 @@ fun ScheduleScreen(onBack: () -> Unit) {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            androidx.compose.material3.Switch(
+            Switch(
                 checked = scheduleEnabled,
-                onCheckedChange = { scheduleEnabled = it },
-                colors = androidx.compose.material3.SwitchDefaults.colors(
-                    uncheckedColor = if (!scheduleEnabled) MaterialTheme.colorScheme.error else Color.Transparent
-                ),
-                modifier = Modifier.fillMaxWidth()
+                onCheckedChange = { scheduleEnabled = it }
             )
             Text(
                 text = "Schedule enforcement",
@@ -186,7 +196,7 @@ fun ScheduleScreen(onBack: () -> Unit) {
             )
             AnchorSectionDivider()
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally))
             } else {
                 Column {
                     days.forEach { day ->
@@ -272,20 +282,6 @@ private fun parseSchedule(json: String): Map<String, DaySchedule> {
         // ignore parse errors, return empty
     }
     return result
-}
-
-private fun buildScheduleJson(): String {
-    val obj = JsonObject()
-    for ((day, sched) in weeklySchedule) {
-        val dayObj = JsonObject()
-        dayObj.addProperty("enabled", sched.enabled)
-        dayObj.addProperty("startHour", sched.startHour)
-        dayObj.addProperty("startMinute", sched.startMinute)
-        dayObj.addProperty("endHour", sched.endHour)
-        dayObj.addProperty("endMinute", sched.endMinute)
-        obj.add(day, dayObj)
-    }
-    return Gson().toJson(obj)
 }
 
 private fun formatTime(hour: Int, minute: Int): String {

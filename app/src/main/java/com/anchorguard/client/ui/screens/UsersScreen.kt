@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -26,6 +28,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -33,10 +37,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.anchorguard.client.auth.data.DeviceRepository
 import com.anchorguard.client.auth.data.DeviceResponse
+import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorSnackbarHost
 import kotlinx.coroutines.Dispatchers
@@ -44,14 +50,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.Scaffold
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +57,7 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val config = NetworkConfig(context)
     val repo = remember { DeviceRepository(context) }
 
     var devices by remember { mutableStateOf<List<DeviceResponse>>(emptyList()) }
@@ -74,14 +73,6 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
     var deleteDeviceId by remember { mutableStateOf<String?>(null) }
     var deleteDeviceName by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        loadDevices()
-    }
-
-    LaunchedEffect(refresh) {
-        loadDevices()
-    }
-
     fun loadDevices() {
         isLoading = true
         scope.launch {
@@ -90,8 +81,8 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             }
             isLoading = false
             when (result) {
-                is NetworkResult.Success -> {
-                    devices = result.data
+                is NetworkResult.Success<*> -> {
+                    devices = (result as NetworkResult.Success<List<DeviceResponse>>).data
                 }
                 is NetworkResult.Failure -> {
                     scope.launch {
@@ -100,6 +91,14 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
                 }
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        loadDevices()
+    }
+
+    LaunchedEffect(refresh) {
+        loadDevices()
     }
 
     fun onAddDevice() {
@@ -117,7 +116,7 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             }
             isLoading = false
             when (result) {
-                is NetworkResult.Success -> {
+                is NetworkResult.Success<*> -> {
                     newDeviceName = ""
                     scope.launch {
                         snackbarHostState.showSnackbar("Child device added")
@@ -149,7 +148,7 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             }
             isLoading = false
             when (result) {
-                is NetworkResult.Success -> {
+                is NetworkResult.Success<*> -> {
                     renameDeviceId = null
                     renameDeviceName = ""
                     scope.launch {
@@ -176,7 +175,7 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             }
             isLoading = false
             when (result) {
-                is NetworkResult.Success -> {
+                is NetworkResult.Success<*> -> {
                     deleteDeviceId = null
                     deleteDeviceName = ""
                     scope.launch {
@@ -209,14 +208,20 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
                 ),
                 navigationIcon = {
                     IconButton(onClick = { /* handled by nav host */ }) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.ArrowBack.Default, contentDescription = "Back")
+                        Icon(
+                            painter = ColorPainter(MaterialTheme.colorScheme.primary),
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 actions = {
                     IconButton(
                         onClick = { refresh = !refresh }
                     ) {
-                        Icon(imageVector = androidx.compose.material.icons.filled.Refresh.Default, contentDescription = "Refresh")
+                        Icon(
+                            painter = ColorPainter(MaterialTheme.colorScheme.primary),
+                            contentDescription = "Refresh"
+                        )
                     }
                 }
             )
@@ -244,9 +249,12 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             Button(
                 onClick = { showAddDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors()
+                colors = ButtonDefaults.outlinedButtonColors()
             ) {
-                Icon(imageVector = androidx.compose.material.icons.filled.Add.Default, contentDescription = null)
+                Icon(
+                    painter = ColorPainter(MaterialTheme.colorScheme.primary),
+                    contentDescription = null
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Add Child Device")
             }
@@ -254,7 +262,7 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             Spacer(Modifier.height(16.dp))
 
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally))
             } else if (devices.isEmpty()) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -262,7 +270,6 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
@@ -286,132 +293,189 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
                         val statusText = if (isOnline) "Online" else "Offline"
                         val statusColor = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
-                        ListItem(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            headlineContent = {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = device.name ?: "Unnamed Device",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "${device.model ?: "Unknown model"} ${device.manufacturer ?: ""}".trimEnd(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            supportingContent = {
-                                Column {
-                                    Text(
-                                        text = statusText,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = statusColor
-                                    )
-                                    Text(
-                                        text = "Last seen: ${formatLastSeen(device.lastSeen)}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            trailingContent = {
-                                androidx.compose.foundation.layout.Row(
-                                    modifier = Modifier.width(100.dp),
-                                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            renameDeviceId = device.id
-                                            renameDeviceName = device.name ?: ""
-                                            showRenameDialog = true
-                                        }
-                                    ) {
-                                        Icon(imageVector = androidx.compose.material.icons.filled.Edit.Default, contentDescription = "Rename")
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            deleteDeviceId = device.id
-                                            deleteDeviceName = device.name ?: "this device"
-                                            showDeleteDialog = true
-                                        }
-                                    ) {
-                                        Icon(imageVector = androidx.compose.material.icons.filled.Delete.Default, contentDescription = "Remove")
-                                    }
-                                }
-                            },
-                            onClick = {
-                                onDeviceSelected?.invoke(device.id)
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = device.name ?: "Unnamed Device",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "${device.model ?: "Unknown model"} ${device.manufacturer ?: ""}".trimEnd(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                        )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = statusText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = statusColor
+                                )
+                                Text(
+                                    text = "Last seen: ${formatLastSeen(device.lastSeen)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        renameDeviceId = device.id
+                                        renameDeviceName = device.name ?: ""
+                                        showRenameDialog = true
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = ColorPainter(MaterialTheme.colorScheme.primary),
+                                        contentDescription = "Rename"
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        deleteDeviceId = device.id
+                                        deleteDeviceName = device.name ?: "this device"
+                                        showDeleteDialog = true
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = ColorPainter(MaterialTheme.colorScheme.error),
+                                        contentDescription = "Remove"
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    // Add Device Dialog
+    // Inline dialogs (shown when flags are set)
     if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Child Device") },
-            text = { Text("Enter a name for the child device.") },
-            confirmButton = {
-                TextButton(onClick = { onAddDevice() }) { Text("Add") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("Cancel") }
-            }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = MaterialTheme.shapes.medium
         ) {
-            OutlinedTextField(
-                value = newDeviceName,
-                onValueChange = { newDeviceName = it },
-                label = { Text("Child name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Add Child Device",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Enter a name for the child device.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.material3.OutlinedTextField(
+                    value = newDeviceName,
+                    onValueChange = { newDeviceName = it },
+                    label = { Text("Child name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    androidx.compose.material3.TextButton(
+                        onClick = { onAddDevice() }
+                    ) { Text("Add") }
+                    androidx.compose.material3.TextButton(
+                        onClick = { showAddDialog = false }
+                    ) { Text("Cancel") }
+                }
+            }
         }
     }
 
-    // Rename Dialog
     if (showRenameDialog && renameDeviceId != null) {
-        AlertDialog(
-            onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename Device") },
-            text = { Text("Enter a new name for ${renameDeviceName}.") },
-            confirmButton = {
-                TextButton(onClick = { onRenameSave() }) { Text("Save") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRenameDialog = false }) { Text("Cancel") }
-            }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = MaterialTheme.shapes.medium
         ) {
-            OutlinedTextField(
-                value = renameDeviceName,
-                onValueChange = { renameDeviceName = it },
-                label = { Text("Device name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Rename Device",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Enter a new name for ${renameDeviceName}.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.material3.OutlinedTextField(
+                    value = renameDeviceName,
+                    onValueChange = { renameDeviceName = it },
+                    label = { Text("Device name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    androidx.compose.material3.TextButton(
+                        onClick = { onRenameSave() }
+                    ) { Text("Save") }
+                    androidx.compose.material3.TextButton(
+                        onClick = { showRenameDialog = false }
+                    ) { Text("Cancel") }
+                }
+            }
         }
     }
 
-    // Delete Confirm Dialog
     if (showDeleteDialog && deleteDeviceId != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Remove Device") },
-            text = { Text("Unlink \"$deleteDeviceName\"? This cannot be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = { onDeleteConfirm() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) { Text("Remove") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Remove Device",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Unlink \"$deleteDeviceName\"? This cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    androidx.compose.material3.TextButton(
+                        onClick = { onDeleteConfirm() },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                    ) { Text("Remove") }
+                    androidx.compose.material3.TextButton(
+                        onClick = { showDeleteDialog = false }
+                    ) { Text("Cancel") }
+                }
             }
-        )
+        }
     }
 }

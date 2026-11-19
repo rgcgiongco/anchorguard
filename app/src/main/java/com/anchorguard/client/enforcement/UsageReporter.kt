@@ -66,7 +66,9 @@ class UsageReporter private constructor(
         if (currentPackage != null && currentPackage != newPkg && currentStartMs > 0) {
             val durationMs = now - currentStartMs
             if (durationMs >= MIN_RECORD_DURATION_MS) {
-                recordEvent(currentPackage!!, currentStartMs, now, durationMs)
+                scope.launch {
+                    recordEvent(currentPackage!!, currentStartMs, now, durationMs)
+                }
             }
         }
 
@@ -80,7 +82,9 @@ class UsageReporter private constructor(
             val now = System.currentTimeMillis()
             val durationMs = now - currentStartMs
             if (durationMs >= MIN_RECORD_DURATION_MS) {
-                recordEvent(currentPackage!!, currentStartMs, now, durationMs)
+                scope.launch {
+                    recordEvent(currentPackage!!, currentStartMs, now, durationMs)
+                }
             }
         }
         currentPackage = null

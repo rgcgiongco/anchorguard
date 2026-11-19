@@ -10,21 +10,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.anchorguard.client.MainActivity
 import com.anchorguard.client.auth.data.DevicePolicyRepository
 import com.anchorguard.client.auth.security.PinSecurityManager
+import com.anchorguard.client.auth.security.PinVerifyResult
 import com.anchorguard.client.enforcement.EnforcementPermissionChecker
 import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.network.NetworkResult
@@ -61,7 +68,7 @@ class DeviceLockActivity : androidx.fragment.app.FragmentActivity() {
         val pinManager = PinSecurityManager(appCtx)
         val result = pinManager.verifyPin(pin)
         when (result) {
-            is PinSecurityManager.PinVerifyResult.Success -> {
+            is PinVerifyResult.Success -> {
                 // Unlock on backend
                 val deviceId = NetworkConfig(appCtx).deviceId()
                 if (deviceId != null) {
@@ -111,7 +118,8 @@ fun DeviceLockScreen(onUnlock: (String) -> Unit) {
     var error by remember { mutableStateOf(false) }
     var isChecking by remember { mutableStateOf(false) }
 
-    val reason = context.intent.getStringExtra("lock_reason")
+    val activity = context as? androidx.fragment.app.FragmentActivity
+    val reason = activity?.intent?.getStringExtra("lock_reason")
 
     Column(
         modifier = Modifier
@@ -147,7 +155,7 @@ fun DeviceLockScreen(onUnlock: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth().width(300.dp),
             singleLine = true,
             isError = error,
-            visualTransformation = androidx.compose.ui.text.input.VisualTransformation.Password()
+            
         )
         if (error) {
             Spacer(modifier = Modifier.height(8.dp))

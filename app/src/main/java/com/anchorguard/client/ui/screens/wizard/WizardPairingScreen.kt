@@ -1,7 +1,10 @@
 package com.anchorguard.client.ui.screens.wizard
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -15,8 +18,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.network.NetworkResult
@@ -24,6 +25,7 @@ import com.anchorguard.client.ui.components.AnchorPrimaryButton
 import com.anchorguard.client.ui.components.AnchorSecondaryButton
 import com.anchorguard.client.ui.screens.ScreenScaffold
 import kotlinx.coroutines.launch
+
 
 @Composable
 fun WizardPairingScreen(
@@ -78,14 +80,12 @@ fun WizardPairingScreen(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            androidx.compose.material3.OutlinedTextField(
                 value = inputCode,
-                onValueChange = { inputCode = it.uppercase() },
+                onValueChange = { inputCode = it },
                 label = { Text("Pairing code (6 chars)") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.fillMaxWidth(),
-                maxLength = 6
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(12.dp))
             AnchorPrimaryButton(
@@ -139,14 +139,14 @@ fun WizardPairingScreen(
 private fun CardPairingCode(code: String, expiresAt: String) {
     androidx.compose.material3.Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        shape = androidx.compose.material3.Shapes.large,
+        shape = MaterialTheme.shapes.large,
         colors = androidx.compose.material3.CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
         elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         androidx.compose.foundation.layout.Column(
-            modifier = androidx.compose.foundation.layout.Modifier
+            modifier = androidx.compose.ui.Modifier
                 .padding(24.dp)
                 .align(androidx.compose.ui.Alignment.CenterHorizontally),
             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
@@ -161,7 +161,7 @@ private fun CardPairingCode(code: String, expiresAt: String) {
                 text = code.takeIf { it.isNotBlank() } ?: "—",
                 style = MaterialTheme.typography.displaySmall
             )
-            Spacer(modifier = androidx.compose.foundation.layout.Modifier.height(4.dp))
+            Spacer(modifier = androidx.compose.ui.Modifier.height(4.dp))
             Text(
                 text = if (expiresAt.isNotBlank()) "Expires: $expiresAt" else "Code expires soon",
                 style = MaterialTheme.typography.bodySmall,

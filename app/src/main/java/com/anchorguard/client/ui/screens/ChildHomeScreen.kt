@@ -1,9 +1,12 @@
 package com.anchorguard.client.ui.screens
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +19,8 @@ import com.anchorguard.client.enforcement.EnforcementController
 import com.anchorguard.client.enforcement.EnforcementState
 import com.anchorguard.client.ui.components.AnchorInfoCard
 import com.anchorguard.client.ui.components.AnchorSecondaryButton
+import com.anchorguard.client.ui.screens.ScreenScaffold
+import androidx.compose.material.icons.Icons
 
 @Composable
 fun ChildHomeScreen(onOpenParentGate: () -> Unit, onOpenSos: () -> Unit) {
@@ -57,8 +62,8 @@ fun ChildHomeScreen(onOpenParentGate: () -> Unit, onOpenSos: () -> Unit) {
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            androidx.compose.material3.Icon(
-                imageVector = androidx.compose.material.icons.filled.Sos.Default,
+            Icon(
+                painter = androidx.compose.ui.graphics.painter.ColorPainter(MaterialTheme.colorScheme.error),
                 contentDescription = "SOS"
             )
             Spacer(modifier = Modifier.width(8.dp))
