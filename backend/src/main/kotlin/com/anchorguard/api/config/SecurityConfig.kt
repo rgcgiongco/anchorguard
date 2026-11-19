@@ -40,7 +40,8 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.POST, "/v1/devices/*/heartbeat", "/v1/reports/usage", "/v1/usage/batch").permitAll()
                     .requestMatchers(HttpMethod.GET, "/v1/policies").permitAll()
                     .requestMatchers("/v1/admin/**").hasAuthority("ROLE_ADMIN")
-                    .anyRequest().authenticated()
+                    .requestMatchers("/v1/**").authenticated()
+                    .anyRequest().permitAll()
             }
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
