@@ -1,0 +1,95 @@
+AnchorGuard - Parental Control / Device Management Platform
+=============================================================
+
+OVERVIEW
+--------
+AnchorGuard is a comprehensive parental control and device management platform consisting of three main components:
+1. **Android Client App** (app/) - Kotlin/Jetpack Compose app for child devices
+2. **Backend API** (backend/) - Kotlin/Spring Boot server for management and sync
+3. **Web Console** (web-console/) - React/TypeScript admin dashboard for parents
+
+The project appears to be a reimplementation/rebranding of "Kids Place" by Kiddoware (based on reverse engineering analysis in analysis/ directory).
+
+ANDROID CLIENT (app/)
+---------------------
+Package: com.anchorguard.client
+- Min SDK: 29 (Android 10), Target/Compile SDK: 36
+- Language: Kotlin with Jetpack Compose (Material3)
+- Architecture: Clean architecture with Hilt DI, Room database, Retrofit/OkHttp networking
+- Key features:
+  * Device Admin / Device Owner enforcement (AnchorGuardDeviceAdminReceiver)
+  * Accessibility Service for app blocking/monitoring (AnchorGuardAccessibilityService)
+  * Foreground service for persistent enforcement (AnchorGuardService)
+  * App usage tracking & reporting (AppUsageTracker, UsageReporter)
+  * Geofencing/location-based policies (GeofenceManager)
+  * Remote lock/unlock capability (DeviceLockActivity, LockCommandReceiver)
+  * Battery optimization exemption handling
+  * Boot completion & package change receivers
+  * Policy engine for rule enforcement (PolicyEngine, EnforcementController)
+  * Screen state monitoring
+
+Key permissions requested:
+- QUERY_ALL_PACKAGES, PACKAGE_USAGE_STATS, GET_TASKS, KILL_BACKGROUND_PROCESSES
+- SYSTEM_ALERT_WINDOW (overlay for blocking)
+- FOREGROUND_SERVICE (multiple types), ACCESS_FINE/COARSE/BACKGROUND_LOCATION
+- POST_NOTIFICATIONS, WAKE_LOCK, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+- SCHEDULE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED
+
+BACKEND API (backend/)
+----------------------
+Project: anchorguard-api (Kotlin/Spring Boot)
+Modules organized by domain:
+- account/ - User account management
+- admin/ - Administrative functions
+- audit/ - Audit logging
+- auth/ - Authentication & authorization
+- common/ - Shared utilities
+- config/ - Configuration
+- device/ - Device management & registration
+- location/ - Geolocation/geofencing
+- policy/ - Policy definitions & enforcement rules
+- report/ - Usage reporting & analytics
+- security/ - Security/crypto utilities
+- sync/ - Data synchronization
+
+WEB CONSOLE (web-console/)
+--------------------------
+Project: anchorguard-console (React 18 + TypeScript + Vite)
+- UI: Tailwind CSS, React Router, TanStack Query (React Query)
+- Mapping: Leaflet + React Leaflet for geofence visualization
+- Testing: Playwright for E2E tests
+- Features: Dashboard, device management, location tracking, policy configuration
+
+ANALYSIS DIRECTORY (analysis/)
+------------------------------
+Contains reverse engineering analysis of "Guardify_custom001.apk" (actually Kids Place by Kiddoware v3.10.15):
+- APK signature analysis, class inventory, method-level decompilation
+- Manifest extraction (obfuscated)
+- Key components analyzed: KidsLauncher, KidsPlaceService, DnsVpnService, AccessibilityService, ReportingService
+- Database models: User, Category, KidsApplication, TaskDatabase
+- Networking: API communication, cryptography, single sign-on
+- Reimplementation plan (GUARDIFY_REIMPLEMENTATION_PLAN.md)
+- Analysis report (GUARDIFY_ANALYSIS_REPORT.md)
+
+BUILD SYSTEM
+------------
+- Gradle (Kotlin DSL) with version catalogs (libs.versions.toml)
+- Android Gradle Plugin, KSP for Room/Hilt
+- Backend uses Gradle too
+- Web console uses npm/Vite
+
+OTHER FILES
+-----------
+- implementation_plan/ - Detailed feature implementation plans organized by modules
+- scripts/ - Utility scripts
+- docs/ - Documentation
+- .github/workflows/ - CI/CD pipelines for Android, backend, web
+- creds.txt, test_push.txt - Likely temporary/test files
+- kilo.jsonc, MCP_SETUP.md - Configuration files
+
+TECH STACK SUMMARY
+------------------
+Android: Kotlin, Compose, Hilt, Room, Retrofit, OkHttp, WorkManager, Coroutines, Material3
+Backend: Kotlin, Spring Boot (implied), Gradle
+Web: React 18, TypeScript, Vite, Tailwind, TanStack Query, Leaflet, Playwright
+CI/CD: GitHub Actions
