@@ -1,5 +1,6 @@
 package com.anchorguard.api.common
 
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -9,6 +10,8 @@ data class ErrorResponse(val error: String, val details: Any? = null)
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @ExceptionHandler(ApiException::class)
     fun handleApi(ex: ApiException): ResponseEntity<ErrorResponse> =
         ResponseEntity.status(ex.status).body(ErrorResponse(ex.message))
@@ -20,6 +23,8 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception::class)
-    fun handleOther(ex: Exception): ResponseEntity<ErrorResponse> =
-        ResponseEntity.internalServerError().body(ErrorResponse("Internal error"))
+    fun handleOther(ex: Exception): ResponseEntity<ErrorResponse> {
+        log.error("Unhandled exception", ex)
+        return ResponseEntity.internalServerError().body(ErrorResponse("Internal error"))
+    }
 }

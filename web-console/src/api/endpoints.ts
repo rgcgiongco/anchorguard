@@ -1,7 +1,7 @@
 import { api } from './client'
 import type {
-  AppPolicy, AuthTokens, Device, DeviceDetail, DevicePolicy, DeviceSettings,
-  MessageResponse, Parent, UsageAggregate
+  AdminDashboard, AppPolicy, AuthTokens, Device, DeviceDetail, DevicePolicy, DeviceSettings,
+  MessageResponse, Parent, SystemHealth, UsageAggregate
 } from './types'
 
 export const authApi = {
@@ -44,4 +44,9 @@ export const reportsApi = {
   usage: (params: { deviceId: string; from?: string; to?: string; packageName?: string }) =>
     api.get<UsageAggregate[]>('/reports/usage', { params }).then((r) => r.data),
   exportUrl: (deviceId: string) => `${api.defaults.baseURL}/reports/export?deviceId=${encodeURIComponent(deviceId)}`
+}
+
+export const adminApi = {
+  dashboard: () => api.get<AdminDashboard>('/admin/dashboard').then((r) => r.data),
+  health: () => api.get<SystemHealth>('/admin/health').then((r) => r.data)
 }

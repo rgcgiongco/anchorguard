@@ -12,8 +12,21 @@ class Parent(
     @Column(name = "password_hash", nullable = false) var passwordHash: String,
     var name: String? = null,
     @Column(name = "email_verified") var emailVerified: Boolean = false,
+    @Column(name = "role_id", nullable = false) var roleId: Short = 1,
     @Column(name = "created_at") var createdAt: Instant = Instant.now(),
     @Column(name = "updated_at") var updatedAt: Instant = Instant.now()
+) {
+    val isAdmin: Boolean get() = roleId == 2.toShort()
+    val roleName: String get() = if (isAdmin) "admin" else "parent"
+}
+
+@Entity
+@Table(name = "roles")
+class Role(
+    @Id @Column(name = "role_id") val roleId: Short,
+    @Column(nullable = false, unique = true) val name: String,
+    val description: String? = null,
+    @Column(name = "is_system") val isSystem: Boolean = false
 )
 
 @Entity

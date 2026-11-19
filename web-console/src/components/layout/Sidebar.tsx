@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useDevices } from '@/context/DeviceContext'
+import { useAuth } from '@/context/AuthContext'
 
 const base = 'nav-item'
 
@@ -14,21 +15,28 @@ function NavItem({ to, label, icon }: { to: string; label: string; icon: string 
 
 export function Sidebar() {
   const { selectedDeviceId } = useDevices()
+  const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const screenTimeTo = selectedDeviceId ? `/devices/${selectedDeviceId}/schedule` : '/devices'
 
   return (
     <aside className="sidebar">
       <nav className="sidebar-nav" aria-label="Primary">
-        <NavItem to="/dashboard" label="Dashboard" icon="▣" />
-        <NavItem to="/devices" label="Devices" icon="▤" />
-        <NavItem to="/users" label="Users" icon="◍" />
-        <button type="button" className="nav-item nav-button" onClick={() => navigate(screenTimeTo)} title="Screen Time">
-          <span className="nav-icon" aria-hidden>◷</span>
-          <span className="nav-label">Screen Time</span>
-        </button>
-        <NavItem to="/security" label="Security" icon="◈" />
-        <NavItem to="/reports" label="Reports" icon="▥" />
+        {isAdmin ? (
+          <NavItem to="/admin" label="Admin" icon="⚙" />
+        ) : (
+          <>
+            <NavItem to="/dashboard" label="Dashboard" icon="▣" />
+            <NavItem to="/devices" label="Devices" icon="▤" />
+            <NavItem to="/users" label="Users" icon="◍" />
+            <button type="button" className="nav-item nav-button" onClick={() => navigate(screenTimeTo)} title="Screen Time">
+              <span className="nav-icon" aria-hidden>◷</span>
+              <span className="nav-label">Screen Time</span>
+            </button>
+            <NavItem to="/security" label="Security" icon="◈" />
+            <NavItem to="/reports" label="Reports" icon="▥" />
+          </>
+        )}
         <NavItem to="/account" label="Account" icon="◉" />
       </nav>
     </aside>

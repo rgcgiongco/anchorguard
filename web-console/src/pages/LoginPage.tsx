@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { getErrorMessage } from '@/api/client'
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const { login, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation() as { state?: { from?: { pathname?: string } } }
   const [email, setEmail] = useState('')
@@ -21,8 +21,8 @@ export default function LoginPage() {
     }
     setBusy(true)
     try {
-      await login(email.trim(), password)
-      const to = location.state?.from?.pathname || '/dashboard'
+      const tokens = await login(email.trim(), password)
+      const to = tokens.role === 'admin' ? '/admin' : (location.state?.from?.pathname || '/dashboard')
       navigate(to, { replace: true })
     } catch (err) {
       setError(getErrorMessage(err) || 'Unable to sign in.')

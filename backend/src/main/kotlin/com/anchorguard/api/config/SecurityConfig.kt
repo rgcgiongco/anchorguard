@@ -39,6 +39,7 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.POST, "/v1/devices/register").permitAll()
                     .requestMatchers(HttpMethod.POST, "/v1/devices/*/heartbeat", "/v1/reports/usage", "/v1/usage/batch").permitAll()
                     .requestMatchers(HttpMethod.GET, "/v1/policies").permitAll()
+                    .requestMatchers("/v1/admin/**").hasAuthority("ROLE_ADMIN")
                     .anyRequest().authenticated()
             }
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)

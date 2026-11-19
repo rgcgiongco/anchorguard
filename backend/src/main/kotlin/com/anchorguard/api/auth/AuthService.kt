@@ -132,8 +132,8 @@ class AuthService(
     }
 
     private fun issueTokens(parent: Parent): AuthTokensResponse {
-        val access = jwtService.generateAccessToken(parent.id, parent.email)
-        val refresh = jwtService.generateRefreshToken(parent.id, parent.email)
+        val access = jwtService.generateAccessToken(parent.id, parent.email, parent.roleName)
+        val refresh = jwtService.generateRefreshToken(parent.id, parent.email, parent.roleName)
         refreshTokens.save(
             RefreshToken(
                 parentId = parent.id,
@@ -141,8 +141,8 @@ class AuthService(
                 expiresAt = jwtService.refreshExpiry()
             )
         )
-        return AuthTokensResponse(accessToken = access, refreshToken = refresh)
+        return AuthTokensResponse(accessToken = access, refreshToken = refresh, role = parent.roleName)
     }
 }
 
-fun Parent.toResponse() = ParentResponse(id, email, name, emailVerified, createdAt)
+fun Parent.toResponse() = ParentResponse(id, email, name, emailVerified, roleName, createdAt)

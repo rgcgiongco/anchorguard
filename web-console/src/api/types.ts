@@ -2,6 +2,7 @@ export type AuthTokens = {
   accessToken: string
   refreshToken: string
   tokenType?: string
+  role?: string
 }
 
 export type Parent = {
@@ -9,7 +10,53 @@ export type Parent = {
   email: string
   name?: string | null
   emailVerified: boolean
+  role?: string
   createdAt: string
+}
+
+export type MetricPoint = { t: number; v: number }
+export type MetricSeries = {
+  key: string
+  label: string
+  unit: string
+  current: number
+  max: number
+  points: MetricPoint[]
+}
+export type SystemHealth = {
+  capturedAt: string
+  status: string
+  api: {
+    status: string
+    db: string
+    diskTotalBytes: number
+    diskFreeBytes: number
+    diskUsableBytes: number
+  }
+  cpu: MetricSeries
+  ram: MetricSeries
+  storage: MetricSeries
+  uptimeSeconds: number
+}
+
+export type AdminUser = {
+  id: string
+  email: string
+  name?: string | null
+  role: string
+  emailVerified: boolean
+  deviceCount: number
+  createdAt: string
+  lastSeen?: string | null
+}
+
+export type AdminDashboard = {
+  users: AdminUser[]
+  totalUsers: number
+  adminCount: number
+  parentCount: number
+  totalDevices: number
+  onlineDevices: number
 }
 
 export type Device = {

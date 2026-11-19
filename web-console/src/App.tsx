@@ -5,6 +5,7 @@ import { ToastProvider } from '@/components/ui/Toast'
 import { AppShell } from '@/components/layout/AppShell'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
+import AdminDashboardPage from '@/pages/AdminDashboardPage'
 import DevicesPage from '@/pages/DevicesPage'
 import DeviceDetailPage from '@/pages/DeviceDetailPage'
 import DeviceAppsPage from '@/pages/DeviceAppsPage'
@@ -14,18 +15,35 @@ import ReportsPage from '@/pages/ReportsPage'
 import AccountPage from '@/pages/AccountPage'
 import UsersPage from '@/pages/UsersPage'
 
+function Loading() {
+  return <div className="content-wrap"><div className="card">Loading session…</div></div>
+}
+
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
   const location = useLocation()
-  if (loading) return <div className="content-wrap"><div className="card">Loading session…</div></div>
+  if (loading) return <Loading />
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />
   return children
 }
 
 function RedirectIfAuthed({ children }: { children: JSX.Element }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin } = useAuth()
   if (loading) return <div className="auth-page"><div className="card auth-card">Loading…</div></div>
-  if (user) return <Navigate to="/dashboard" replace />
+  if (user) return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
+  return children
+}
+
+function HomeRedirect() {
+  const { user, loading, isAdmin } = useAuth()
+  if (loading) return <Loading />
+  if (!user) return <Navigate to="/login" replace />
+  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
+}
+
+function RequireAdmin({ children }: { children: JSX.Element }) {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -49,7 +67,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<RedirectIfAuthed><LoginPage /></RedirectIfAuthed>} />
         <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<HomeRedirect />} />
+          <Route path="admin" element={<RequireAdmin><AdminDashboardPage /></RequireAdmin>} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="devices" element={<DevicesPage />} />
           <Route path="devices/:id" element={<DeviceDetailPage />} />
@@ -60,7 +79,7 @@ function AppRoutes() {
           <Route path="account" element={<AccountPage />} />
           <Route path="users" element={<UsersPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<HomeRedirect />} />
       </Routes>
     </>
   )

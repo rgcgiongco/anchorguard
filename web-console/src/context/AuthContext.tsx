@@ -7,10 +7,11 @@ import type { AuthTokens, Parent } from '@/api/types'
 type AuthState = {
   user: Parent | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<AuthTokens>
   logout: () => Promise<void>
   refreshMe: () => Promise<void>
   setSession: (tokens: AuthTokens, user?: Parent | null) => void
+  isAdmin: boolean
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined)
@@ -55,11 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthState>(() => ({
     user,
     loading,
-    login: async (email, password) => {
+    login: async (email, password): Promise<AuthTokens> => {
       const tokens = await authApi.login(email, password)
       setTokens(tokens)
       const me = await accountApi.me()
       setUser(me)
+      return tokens
     },
     logout: async () => {
       const rt = getRefreshToken()
@@ -76,7 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession: (t, u = null) => {
       setTokens(t)
       setUser(u)
-    }
+    },
+    isAdmin: user?.role === 'admin'
   }), [user, loading, qc])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

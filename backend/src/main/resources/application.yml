@@ -43,7 +43,7 @@ anchorguard:
     refresh-token-days: ${ANCHORGUARD_REFRESH_TOKEN_DAYS:7}
     pairing-code-minutes: ${ANCHORGUARD_PAIRING_CODE_MINUTES:15}
   cors:
-    allowed-origins: ${ANCHORGUARD_CORS_ORIGINS:https://app.anchorguard.com}
+    allowed-origins: ${ANCHORGUARD_CORS_ORIGINS:https://app.anchorguard.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
 
 springdoc:
   api-docs:

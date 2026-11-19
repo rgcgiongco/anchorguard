@@ -173,3 +173,29 @@ th { font-size: 0.85rem; color: var(--ag-on-surface-variant); text-transform: up
   .footer { padding-bottom: 72px; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ===== Admin dashboard ===== */
+.health-card { display: grid; gap: 6px; }
+.health-current { font-weight: 700; font-size: 1.1rem; }
+.health-gauge { display: grid; place-items: center; gap: 6px; }
+.gauge { position: relative; width: 120px; height: 120px; }
+.gauge-value {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-weight: 700; font-size: 1.1rem; color: var(--ag-primary-dark);
+}
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th, .data-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ag-outline); white-space: nowrap; }
+.data-table thead th { color: var(--ag-on-surface-variant); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+.data-table tbody tr:hover { background: var(--ag-surface-variant); }
+.th-sort {
+  background: none; border: 0; padding: 0; margin: 0; cursor: pointer; font: inherit;
+  color: inherit; text-transform: inherit; letter-spacing: inherit; font-weight: inherit;
+}
+.role-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.role-admin { background: rgba(46,111,142,0.15); color: var(--ag-primary-dark); }
+.role-parent { background: rgba(120,120,120,0.12); color: var(--ag-on-surface-variant); }
+.status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #2E9E5B; margin-right: 6px; vertical-align: middle;
+}

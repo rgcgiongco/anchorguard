@@ -6,6 +6,13 @@ import java.util.UUID
 interface ParentRepository : JpaRepository<Parent, UUID> {
     fun findByEmail(email: String): Parent?
     fun existsByEmail(email: String): Boolean
+    fun findAllByOrderByCreatedAtDesc(): List<Parent>
+    fun countByRoleId(roleId: Short): Long
+    fun existsByRoleId(roleId: Short): Boolean
+}
+
+interface RoleRepository : JpaRepository<Role, Short> {
+    fun findByName(name: String): Role?
 }
 
 interface RefreshTokenRepository : JpaRepository<RefreshToken, UUID> {
