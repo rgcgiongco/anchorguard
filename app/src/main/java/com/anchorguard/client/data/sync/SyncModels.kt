@@ -62,3 +62,21 @@ data class PoliciesResponse(
     @SerializedName("serverTime")
     val serverTime: Long? = null
 )
+
+data class LocationBatchRequest(
+    val deviceId: String,
+    val locations: List<LocationPoint>
+)
+
+data class LocationPoint(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracy: Float,
+    val timestamp: Long
+)
+
+data class LocationBatchResponse(
+    val acceptedIds: List<String> = emptyList(),
+    val rejectedIds: List<String> = emptyList(),
+    val message: String? = null
+)

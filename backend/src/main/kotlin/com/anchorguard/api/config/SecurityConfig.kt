@@ -37,7 +37,7 @@ class SecurityConfig(
                     .requestMatchers("/v1/docs/**", "/v1/docs/openapi/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/v1/auth/register", "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/password-reset/request", "/v1/auth/password-reset/confirm").permitAll()
                     .requestMatchers(HttpMethod.POST, "/v1/devices/register").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/v1/devices/*/heartbeat", "/v1/reports/usage", "/v1/usage/batch").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/v1/devices/*/heartbeat", "/v1/reports/usage", "/v1/usage/batch", "/v1/locations/batch").permitAll()
                     .requestMatchers(HttpMethod.GET, "/v1/policies").permitAll()
                     .requestMatchers("/v1/admin/**").hasAuthority("ROLE_ADMIN")
                     .requestMatchers("/v1/**").authenticated()

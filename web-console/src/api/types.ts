@@ -117,3 +117,39 @@ export type UsageAggregate = {
 }
 
 export type MessageResponse = { message: string }
+
+export type LocationPoint = {
+  id: string
+  deviceId: string
+  latitude: number
+  longitude: number
+  accuracy?: number | null
+  timestamp: string
+  createdAt: string
+}
+
+export type GeofenceZone = {
+  id: string
+  deviceId: string
+  name: string
+  latitude: number
+  longitude: number
+  radiusMeters: number
+  createdAt: string
+}
+
+export type GeofenceAlert = {
+  id: string
+  deviceId: string
+  zoneId: string
+  zoneName: string
+  alertType: 'ENTER' | 'EXIT'
+  occurredAt: string
+}
+
+export type LocationHistoryParams = {
+  deviceId: string
+  from?: string
+  to?: string
+  limit?: number
+}

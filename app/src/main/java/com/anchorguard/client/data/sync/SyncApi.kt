@@ -20,4 +20,9 @@ interface SyncApi {
         @Query("deviceId") deviceId: String?,
         @Query("since") since: Long? = null
     ): Response<PoliciesResponse>
+
+    @POST("locations/batch")
+    suspend fun uploadLocationBatch(
+        @Body body: LocationBatchRequest
+    ): Response<LocationBatchResponse>
 }

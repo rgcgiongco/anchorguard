@@ -8,6 +8,7 @@ type AuthState = {
   user: Parent | null
   loading: boolean
   login: (email: string, password: string) => Promise<AuthTokens>
+  signup: (payload: { name: string; email: string; password: string }) => Promise<AuthTokens>
   logout: () => Promise<void>
   refreshMe: () => Promise<void>
   setSession: (tokens: AuthTokens, user?: Parent | null) => void
@@ -58,6 +59,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     login: async (email, password): Promise<AuthTokens> => {
       const tokens = await authApi.login(email, password)
+      setTokens(tokens)
+      const me = await accountApi.me()
+      setUser(me)
+      return tokens
+    },
+    signup: async ({ name, email, password }): Promise<AuthTokens> => {
+      const tokens = await authApi.signup({ name, email, password })
       setTokens(tokens)
       const me = await accountApi.me()
       setUser(me)

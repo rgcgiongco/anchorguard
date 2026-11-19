@@ -59,5 +59,6 @@ class SyncPreferences(context: Context) {
         const val TABLE_APP_POLICIES = "app_policies"
         const val TABLE_DEVICE_SETTINGS = "device_settings"
         const val TABLE_USAGE_EVENTS = "usage_events"
+        const val TABLE_LOCATIONS = "locations"
     }
 }

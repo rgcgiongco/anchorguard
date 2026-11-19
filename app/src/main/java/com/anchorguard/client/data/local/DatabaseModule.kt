@@ -4,6 +4,7 @@ import android.content.Context
 import com.anchorguard.client.data.local.dao.AppPolicyDao
 import com.anchorguard.client.data.local.dao.DeviceSettingDao
 import com.anchorguard.client.data.local.dao.DeviceUserDao
+import com.anchorguard.client.data.local.dao.LocationDao
 import com.anchorguard.client.data.local.dao.SyncStatusDao
 import com.anchorguard.client.data.local.dao.UsageEventDao
 import dagger.Module
@@ -30,6 +31,9 @@ object DatabaseModule {
 
     @Provides
     fun provideDeviceSettingDao(db: AnchorGuardDatabase): DeviceSettingDao = db.deviceSettingDao()
+
+    @Provides
+    fun provideLocationDao(db: AnchorGuardDatabase): LocationDao = db.locationDao()
 
     @Provides
     fun provideUsageEventDao(db: AnchorGuardDatabase): UsageEventDao = db.usageEventDao()

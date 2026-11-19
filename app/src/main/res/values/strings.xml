@@ -15,4 +15,13 @@
     <string name="device_admin_description">Allows AnchorGuard to help protect this device and prevent unauthorized removal when enabled.</string>
     <string name="accessibility_service_label">AnchorGuard Protection Service</string>
     <string name="accessibility_service_description">Helps AnchorGuard detect app changes for policy enforcement when enabled.</string>
+
+    <string name="location_rationale_title">AnchorGuard Location Access</string>
+    <string name="location_rationale_message">AnchorGuard needs location access to show your child\'s device location on the map and evaluate geofence boundaries. Location is used only for safety features controlled by you.</string>
+    <string name="location_background_rationale">Allow location access at all times so AnchorGuard can update your child\'s location even when the app is closed.</string>
+
+    <string name="location_channel_name">AnchorGuard Location</string>
+    <string name="location_channel_description">Tracks device location for safety and geofence features.</string>
+    <string name="location_notification_title">AnchorGuard location tracking</string>
+    <string name="location_notification_text">Location tracking is active in the background.</string>
 </resources>

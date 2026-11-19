@@ -1,12 +1,15 @@
 import { api } from './client'
 import type {
   AdminDashboard, AppPolicy, AuthTokens, Device, DeviceDetail, DevicePolicy, DeviceSettings,
-  MessageResponse, Parent, SystemHealth, UsageAggregate
+  GeofenceAlert, GeofenceZone, LocationHistoryParams, LocationPoint, MessageResponse, Parent,
+  SystemHealth, UsageAggregate
 } from './types'
 
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthTokens>('/auth/login', { email, password }).then((r) => r.data),
+  signup: (payload: { name: string; email: string; password: string }) =>
+    api.post<AuthTokens>('/auth/signup', payload).then((r) => r.data),
   logout: (refreshToken: string) =>
     api.post<MessageResponse>('/auth/logout', { refreshToken }).then((r) => r.data)
 }
@@ -49,4 +52,19 @@ export const reportsApi = {
 export const adminApi = {
   dashboard: () => api.get<AdminDashboard>('/admin/dashboard').then((r) => r.data),
   health: () => api.get<SystemHealth>('/admin/health').then((r) => r.data)
+}
+
+export const locationsApi = {
+  batchUpload: (payload: { deviceId: string; locations: LocationPoint[] }) =>
+    api.post<MessageResponse>('/locations/batch', payload).then((r) => r.data),
+  getLocationHistory: (deviceId: string, params?: LocationHistoryParams) =>
+    api.get<LocationPoint[]>(`/devices/${deviceId}/locations`, { params }).then((r) => r.data),
+  getCurrentLocation: (deviceId: string) =>
+    api.get<LocationPoint>(`/devices/${deviceId}/locations/current`).then((r) => r.data),
+  getGeofenceZones: (deviceId: string) =>
+    api.get<GeofenceZone[]>(`/devices/${deviceId}/geofences`).then((r) => r.data),
+  createGeofenceZone: (deviceId: string, payload: { name: string; latitude: number; longitude: number; radiusMeters: number }) =>
+    api.post<GeofenceZone>(`/devices/${deviceId}/geofences`, payload).then((r) => r.data),
+  deleteGeofenceZone: (zoneId: string) =>
+    api.delete<MessageResponse>(`/geofences/${zoneId}`).then((r) => r.data)
 }

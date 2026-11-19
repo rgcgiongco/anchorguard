@@ -44,6 +44,10 @@ anchorguard:
     pairing-code-minutes: ${ANCHORGUARD_PAIRING_CODE_MINUTES:15}
   cors:
     allowed-origins: ${ANCHORGUARD_CORS_ORIGINS:https://app.anchorguard.com,https://anchorguard.tail78464.ts.net,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
+  location:
+    enabled: ${ANCHORGUARD_LOCATION_ENABLED:true}
+    geofence:
+      enabled: ${ANCHORGUARD_LOCATION_GEOFENCE_ENABLED:true}
 
 springdoc:
   api-docs:

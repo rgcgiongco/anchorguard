@@ -1,45 +1,28 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { useDevices } from '@/context/DeviceContext'
 
 export function Header() {
   const { user, logout } = useAuth()
-  const { devices, selectedDeviceId, setSelectedDeviceId } = useDevices()
-  const navigate = useNavigate()
 
   return (
     <header className="app-header">
       <div className="row" style={{ gap: 16 }}>
-        <button className="btn btn-ghost brand-button" onClick={() => navigate('/dashboard')}>
+        <Link to="/dashboard" className="btn btn-ghost brand-button">
           AnchorGuard
-        </button>
-        {user?.role === 'admin' ? (
-          <span className="pill" style={{ color: 'var(--ag-primary-dark)', fontWeight: 600 }}>System Administrator</span>
-        ) : (
-          <div className="field" style={{ minWidth: 220 }}>
-            <select
-              aria-label="Device switcher"
-              value={selectedDeviceId ?? ''}
-              onChange={(e) => setSelectedDeviceId(e.target.value || null)}
-              disabled={!devices.length}
-            >
-              {!devices.length && <option value="">No linked devices</option>}
-              {devices.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name || d.model || d.hexId} {d.isOnline ? '• Online' : '• Offline'}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        </Link>
+        <span className="hidden md:inline px-3 py-1.5 rounded-md bg-[#1E3A8A]/10 text-[#1E3A8A] text-xs font-medium border border-[#1E3A8A]/20">
+          Parent Console
+        </span>
       </div>
       <div className="row">
-        {user?.role !== 'admin' && (
-          <button className="btn btn-ghost" title="Notifications" aria-label="Notifications">Alerts</button>
-        )}
+        <button className="btn btn-ghost hidden sm:inline" title="Notifications" aria-label="Notifications">
+          Alerts
+        </button>
         <div className="row" style={{ gap: 8 }}>
-          <span className="muted" style={{ fontSize: 14 }}>{user?.email}</span>
-          <button className="btn btn-secondary" onClick={() => { void logout() }}>Sign out</button>
+          <span className="hidden sm:inline muted" style={{ fontSize: 14 }}>{user?.email}</span>
+          <button className="btn btn-secondary hidden sm:inline" onClick={() => { void logout() }} title="Sign out">
+            Sign out
+          </button>
         </div>
       </div>
     </header>
