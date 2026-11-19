@@ -54,7 +54,7 @@ class SyncPreferences(context: Context) {
         private const val KEY_DEVICE_USER_ID = "device_user_id"
         private const val KEY_ACCESS_TOKEN = "access_token"
         private const val KEY_LAST_SYNC_PREFIX = "last_sync_"
-        const val DEFAULT_BASE_URL = "https://api.anchorguard.com/v1/"
+        const val DEFAULT_BASE_URL = "https://anchorguard.tail78464.ts.net/api/v1/"
         const val TABLE_DEVICE_USERS = "device_users"
         const val TABLE_APP_POLICIES = "app_policies"
         const val TABLE_DEVICE_SETTINGS = "device_settings"
