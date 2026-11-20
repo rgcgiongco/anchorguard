@@ -70,7 +70,9 @@ class ReportService(
         sb.append("package_name,event_count,total_duration_ms,first_seen,last_seen\n")
 
         val grouped = rows.groupBy { it.packageName }
-        for ((pkg, evts) in grouped.sortedByDescending { it.value.size }) {
+        for (entry in grouped.entries.sortedByDescending { it.value.size }) {
+            val pkg = entry.key
+            val evts = entry.value
             val totalDuration = evts.filter { it.durationMs != null }.map { it.durationMs!! }.sum()
             val firstSeen = evts.minByOrNull { it.occurredAt }?.occurredAt?.toString() ?: ""
             val lastSeen = evts.maxByOrNull { it.occurredAt }?.occurredAt?.toString() ?: ""

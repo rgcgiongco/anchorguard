@@ -1,6 +1,11 @@
 package com.anchorguard.api.device
 
+import com.anchorguard.api.auth.AuthService
 import com.anchorguard.api.auth.MessageResponse
+import com.anchorguard.api.auth.Parent
+import com.anchorguard.api.auth.ParentRepository
+import com.anchorguard.api.audit.AuditLog
+import com.anchorguard.api.audit.AuditLogRepository
 import com.anchorguard.api.common.*
 import com.anchorguard.api.security.AuthPrincipal
 import org.springframework.beans.factory.annotation.Value
@@ -8,6 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.UUID
@@ -16,6 +22,9 @@ import java.util.UUID
 class DeviceService(
     private val devices: DeviceRepository,
     private val sosEvents: SosEventRepository,
+    private val authService: AuthService,
+    private val parents: ParentRepository,
+    private val auditLogs: AuditLogRepository,
     @Value("\${anchorguard.security.pairing-code-minutes}") private val pairingMinutes: Long
 ) {
     private val random = SecureRandom()
@@ -169,6 +178,50 @@ class DeviceService(
         return MessageResponse("SOS acknowledged")
     }
 
+    @Transactional
+    fun switchDeviceMode(deviceId: UUID, requestedMode: String, pin: String, switchedBy: UUID): SwitchModeResponse {
+        val device = devices.findById(deviceId).orElseThrow { NotFoundException("Device not found") }
+        if (device.role != DeviceRole.BOTH) {
+            throw ForbiddenException("Mode switching is only available on shared (BOTH) devices")
+        }
+        val mode = requestedMode.lowercase()
+        if (mode != "parent" && mode != "child") {
+            throw BadRequestException("Invalid mode: must be 'parent' or 'child'")
+        }
+        val parent = parents.findById(switchedBy).orElseThrow { NotFoundException("Parent not found") }
+        val pinHash = device.parentId?.let { parents.findById(it).orElse(null)?.parentPinHash }
+            ?: throw BadRequestException("No parent PIN configured for this device")
+        if (!authService.validateParentPin(switchedBy, pin)) {
+            throw UnauthorizedException("Invalid PIN")
+        }
+        val previousMode = device.activeMode
+        device.activeMode = mode
+        device.lastModeSwitchAt = LocalDateTime.now()
+        device.switchedByUserId = switchedBy
+        devices.save(device)
+
+        auditLogs.save(
+            AuditLog(
+                deviceId = device.id,
+                actor = switchedBy.toString(),
+                action = "MODE_SWITCHED",
+                detailsJson = """{"fromMode":"$previousMode","toMode":"$mode","deviceId":"$deviceId","switchedBy":"$switchedBy"}"""
+            )
+        )
+
+        return SwitchModeResponse(success = true, currentMode = mode)
+    }
+
+    fun getDeviceMode(deviceId: UUID): String {
+        val device = devices.findById(deviceId).orElseThrow { NotFoundException("Device not found") }
+        return device.activeMode
+    }
+
+    fun isEnforcementActive(deviceId: UUID): Boolean {
+        val device = devices.findById(deviceId).orElseThrow { NotFoundException("Device not found") }
+        return device.role == DeviceRole.CHILD || (device.role == DeviceRole.BOTH && device.activeMode == "child")
+    }
+
     fun ownedDevice(principal: AuthPrincipal, id: UUID): Device {
         val device = devices.findById(id).orElseThrow { NotFoundException("Device not found") }
         if (device.parentId != principal.parentId) throw ForbiddenException("Access denied")
@@ -198,7 +251,8 @@ class DeviceService(
 fun Device.toResponse() = DeviceResponse(
     id = id, hexId = hexId, name = name, model = model, manufacturer = manufacturer,
     appVersion = appVersion, lastSeen = lastSeen, isOnline = isOnline,
-    isPaired = parentId != null, createdAt = createdAt
+    isPaired = parentId != null, createdAt = createdAt,
+    role = role.value, activeMode = activeMode
 )
 
 fun Device.toDetailResponse() = DeviceDetailResponse(
@@ -206,5 +260,5 @@ fun Device.toDetailResponse() = DeviceDetailResponse(
     androidId = androidId, appVersion = appVersion, lastSeen = lastSeen, isOnline = isOnline,
     isPaired = parentId != null, isLocked = isLocked,
     pairingCode = pairingCode, pairingExpiresAt = pairingExpiresAt,
-    createdAt = createdAt
+    createdAt = createdAt, role = role.value, activeMode = activeMode
 )

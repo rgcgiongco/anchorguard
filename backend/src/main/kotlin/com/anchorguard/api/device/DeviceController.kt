@@ -10,7 +10,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import java.nio.charset.Charsets
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.UUID
 
@@ -41,9 +41,25 @@ class DeviceController(
     fun list(@AuthenticationPrincipal principal: AuthPrincipal): List<DeviceResponse> =
         deviceService.list(principal)
 
+    @GetMapping("/shared")
+    fun listShared(@AuthenticationPrincipal principal: AuthPrincipal): List<DeviceResponse> =
+        deviceService.list(principal).filter { it.role == "BOTH" }
+
     @GetMapping("/{id}")
     fun get(@AuthenticationPrincipal principal: AuthPrincipal, @PathVariable id: UUID): DeviceDetailResponse =
         deviceService.get(principal, id)
+
+    @GetMapping("/{id}/mode")
+    fun getMode(@AuthenticationPrincipal principal: AuthPrincipal, @PathVariable id: UUID): SwitchModeResponse =
+        SwitchModeResponse(success = true, currentMode = deviceService.getDeviceMode(id))
+
+    @PostMapping("/{id}/mode/switch")
+    fun switchMode(
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @PathVariable id: UUID,
+        @Valid @RequestBody req: SwitchModeRequest
+    ): SwitchModeResponse =
+        deviceService.switchDeviceMode(id, req.mode, req.pin, principal.parentId)
 
     @GetMapping("/{id}/status")
     fun getStatus(@AuthenticationPrincipal principal: AuthPrincipal, @PathVariable id: UUID): DeviceStatusResponse =
@@ -107,11 +123,11 @@ class DeviceController(
         @PathVariable id: UUID,
         @RequestParam(required = false) from: Instant?,
         @RequestParam(required = false) to: Instant?
-    ): ResponseEntity<byte[]> {
+    ): ResponseEntity<ByteArray> {
         val csv = reportService.exportUsageCsv(principal, id, from, to)
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"usage-export-$id.csv\"")
             .contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))
-            .body(csv.toByteArray(Charsets.UTF_8))
+            .body(csv.toByteArray(StandardCharsets.UTF_8))
     }
 }

@@ -1,5 +1,7 @@
 package com.anchorguard.api.admin
 
+import com.anchorguard.api.device.DeviceRepository
+import com.anchorguard.api.device.DeviceRole
 import com.anchorguard.api.security.AuthPrincipal
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -9,7 +11,8 @@ import java.time.Instant
 @RequestMapping("/v1/admin")
 class AdminController(
     private val adminUsers: AdminUserRepository,
-    private val health: SystemHealthService
+    private val health: SystemHealthService,
+    private val devices: DeviceRepository
 ) {
     @GetMapping("/dashboard")
     fun dashboard(@AuthenticationPrincipal principal: AuthPrincipal): AdminDashboardResponse {
@@ -38,6 +41,26 @@ class AdminController(
         )
     }
 
+    @GetMapping("/devices/shared-mode")
+    fun sharedModeDevices(@AuthenticationPrincipal principal: AuthPrincipal): List<SharedModeDeviceDto> =
+        devices.findByRole(DeviceRole.BOTH).map { d ->
+            SharedModeDeviceDto(
+                id = d.id,
+                hexId = d.hexId,
+                name = d.name,
+                activeMode = d.activeMode,
+                lastModeSwitchAt = d.lastModeSwitchAt
+            )
+        }
+
     @GetMapping("/health")
     fun systemHealth(@AuthenticationPrincipal principal: AuthPrincipal): SystemHealthResponse = health.snapshot()
 }
+
+data class SharedModeDeviceDto(
+    val id: java.util.UUID,
+    val hexId: String,
+    val name: String?,
+    val activeMode: String,
+    val lastModeSwitchAt: java.time.LocalDateTime?
+)

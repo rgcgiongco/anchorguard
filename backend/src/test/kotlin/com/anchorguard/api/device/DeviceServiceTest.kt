@@ -1,5 +1,8 @@
 package com.anchorguard.api.device
 
+import com.anchorguard.api.auth.AuthService
+import com.anchorguard.api.auth.ParentRepository
+import com.anchorguard.api.audit.AuditLogRepository
 import com.anchorguard.api.common.BadRequestException
 import com.anchorguard.api.common.ConflictException
 import com.anchorguard.api.common.ForbiddenException
@@ -29,10 +32,14 @@ class DeviceServiceTest {
     private lateinit var service: DeviceService
 
     private val devices = mock(DeviceRepository::class.java)
+    private val sosEvents = mock(SosEventRepository::class.java)
+    private val authService = mock(AuthService::class.java)
+    private val parents = mock(ParentRepository::class.java)
+    private val auditLogs = mock(AuditLogRepository::class.java)
 
     @BeforeEach
     fun setup() {
-        service = DeviceService(devices, 10L)
+        service = DeviceService(devices, sosEvents, authService, parents, auditLogs, 10L)
     }
 
     @Test

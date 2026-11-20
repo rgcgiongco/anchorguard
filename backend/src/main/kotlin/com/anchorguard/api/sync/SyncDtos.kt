@@ -62,5 +62,7 @@ data class PoliciesSyncResponse(
     val deviceUsers: List<SyncDeviceUserDto> = emptyList(),
     val appPolicies: List<SyncAppPolicyDto> = emptyList(),
     val deviceSettings: List<SyncDeviceSettingDto> = emptyList(),
-    val serverTime: Long = System.currentTimeMillis()
+    val serverTime: Long = System.currentTimeMillis(),
+    val role: String = "PARENT",
+    val activeMode: String = "parent"
 )

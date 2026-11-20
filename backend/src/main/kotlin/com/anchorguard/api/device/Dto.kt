@@ -38,7 +38,9 @@ data class DeviceResponse(
     val lastSeen: Instant?,
     val isOnline: Boolean,
     val isPaired: Boolean,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val role: String,
+    val activeMode: String
 )
 
 data class DeviceDetailResponse(
@@ -55,7 +57,9 @@ data class DeviceDetailResponse(
     val isLocked: Boolean,
     val pairingCode: String?,
     val pairingExpiresAt: Instant?,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val role: String,
+    val activeMode: String
 )
 
 data class DeviceStatusResponse(
@@ -97,4 +101,14 @@ data class SosEventResponse(
 data class SosEventListResponse(
     val deviceId: UUID,
     val events: List<SosEventResponse>
+)
+
+data class SwitchModeRequest(
+    val mode: String,
+    val pin: String
+)
+
+data class SwitchModeResponse(
+    val success: Boolean,
+    val currentMode: String
 )

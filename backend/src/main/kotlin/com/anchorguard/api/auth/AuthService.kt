@@ -131,6 +131,20 @@ class AuthService(
         return MessageResponse("Account deleted")
     }
 
+    @Transactional
+    fun setParentPin(userId: UUID, pin: String): MessageResponse {
+        val parent = parents.findById(userId).orElseThrow { NotFoundException("Account not found") }
+        parent.parentPinHash = passwordEncoder.encode(pin)
+        parents.save(parent)
+        return MessageResponse("Parent PIN set")
+    }
+
+    fun validateParentPin(userId: UUID, pin: String): Boolean {
+        val parent = parents.findById(userId).orElse(null) ?: return false
+        val hash = parent.parentPinHash ?: return false
+        return passwordEncoder.matches(pin, hash)
+    }
+
     private fun issueTokens(parent: Parent): AuthTokensResponse {
         val access = jwtService.generateAccessToken(parent.id, parent.email, parent.roleName)
         val refresh = jwtService.generateRefreshToken(parent.id, parent.email, parent.roleName)

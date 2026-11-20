@@ -124,7 +124,9 @@ class SyncService(
             deviceUsers = users,
             appPolicies = policies,
             deviceSettings = settings,
-            serverTime = System.currentTimeMillis()
+            serverTime = System.currentTimeMillis(),
+            role = device.role.value,
+            activeMode = device.activeMode
         )
     }
 }

@@ -27,6 +27,7 @@ data class PasswordResetConfirmRequest(
 
 data class AuthTokensResponse(val accessToken: String, val refreshToken: String, val tokenType: String = "Bearer", val role: String = "parent")
 data class MessageResponse(val message: String)
+data class SetParentPinRequest(@field:NotBlank val pin: String)
 data class ParentResponse(
     val id: UUID,
     val email: String,

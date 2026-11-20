@@ -14,7 +14,8 @@ class Parent(
     @Column(name = "email_verified") var emailVerified: Boolean = false,
     @Column(name = "role_id", nullable = false) var roleId: Short = 1,
     @Column(name = "created_at") var createdAt: Instant = Instant.now(),
-    @Column(name = "updated_at") var updatedAt: Instant = Instant.now()
+    @Column(name = "updated_at") var updatedAt: Instant = Instant.now(),
+    @Column(name = "parent_pin_hash") var parentPinHash: String? = null
 ) {
     val isAdmin: Boolean get() = roleId == 2.toShort()
     val roleName: String get() = if (isAdmin) "admin" else "parent"

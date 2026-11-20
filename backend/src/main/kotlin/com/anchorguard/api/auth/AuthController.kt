@@ -1,7 +1,9 @@
 package com.anchorguard.api.auth
 
+import com.anchorguard.api.security.AuthPrincipal
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -30,4 +32,8 @@ class AuthController(private val authService: AuthService) {
     @PostMapping("/password-reset/confirm")
     fun confirmReset(@Valid @RequestBody req: PasswordResetConfirmRequest): MessageResponse =
         authService.confirmPasswordReset(req)
+
+    @PostMapping("/parent-pin")
+    fun setParentPin(@AuthenticationPrincipal principal: AuthPrincipal, @Valid @RequestBody req: SetParentPinRequest): MessageResponse =
+        authService.setParentPin(principal.parentId, req.pin)
 }

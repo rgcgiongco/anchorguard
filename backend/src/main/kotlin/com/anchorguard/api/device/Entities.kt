@@ -3,7 +3,14 @@ package com.anchorguard.api.device
 import jakarta.persistence.*
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
+
+enum class DeviceRole(val value: String) {
+    PARENT("PARENT"),
+    CHILD("CHILD"),
+    BOTH("BOTH")
+}
 
 @Entity
 @Table(name = "devices")
@@ -22,7 +29,11 @@ class Device(
     @Column(name = "pairing_code") var pairingCode: String? = null,
     @Column(name = "pairing_expires_at") var pairingExpiresAt: Instant? = null,
     @Column(name = "is_locked") var isLocked: Boolean = false,
-    @Column(name = "created_at") var createdAt: Instant = Instant.now()
+    @Column(name = "created_at") var createdAt: Instant = Instant.now(),
+    @Column(name = "role", nullable = false) var role: DeviceRole = DeviceRole.PARENT,
+    @Column(name = "active_mode", nullable = false) var activeMode: String = "parent",
+    @Column(name = "last_mode_switch_at") var lastModeSwitchAt: LocalDateTime? = null,
+    @Column(name = "switched_by_user_id") var switchedByUserId: UUID? = null
 )
 
 @Entity
