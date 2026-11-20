@@ -57,8 +57,9 @@ class SessionAuthenticator(
                     val access = body?.accessToken
                     val newRefresh = body?.refreshToken ?: refreshToken
                     if (!access.isNullOrBlank()) {
-                        com.anchorguard.client.auth.security.SecureSessionStore(appContext)
-                            .setParentTokens(access, newRefresh)
+                        val store = com.anchorguard.client.auth.security.SecureSessionStore(appContext)
+                        store.setParentTokens(access, newRefresh)
+                        store.setUserTier(body.tier)
                         access
                     } else null
                 } else {

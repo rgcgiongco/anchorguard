@@ -24,7 +24,14 @@ object NetworkErrorMapper {
         val code = response.code()
         val message = parseMessage(response.errorBody()?.string())
         return when (code) {
-            401, 403 -> NetworkError.Auth(code, message)
+            401 -> NetworkError.Auth(code, message)
+            403 -> {
+                if (message != null && message.contains("tier", ignoreCase = true)) {
+                    NetworkError.TierRequired(message)
+                } else {
+                    NetworkError.Auth(code, message)
+                }
+            }
             in 500..599 -> NetworkError.Server(code, message)
             else -> NetworkError.Server(code, message)
         }

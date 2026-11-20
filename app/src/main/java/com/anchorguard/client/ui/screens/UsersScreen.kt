@@ -40,8 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.anchorguard.client.R
 import com.anchorguard.client.auth.data.DeviceRepository
 import com.anchorguard.client.auth.data.DeviceResponse
+import com.anchorguard.client.data.local.UserRepository
+import com.anchorguard.client.model.SubscriptionTier
 import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorSnackbarHost
@@ -59,6 +62,8 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
     val snackbarHostState = remember { SnackbarHostState() }
     val config = NetworkConfig(context)
     val repo = remember { DeviceRepository(context) }
+    val userRepo = remember { UserRepository(context) }
+    val userTier by remember { mutableStateOf(userRepo.getUserTier()) }
 
     var devices by remember { mutableStateOf<List<DeviceResponse>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -105,6 +110,13 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
         if (newDeviceName.isBlank()) {
             scope.launch {
                 snackbarHostState.showSnackbar("Please enter a child name", duration = SnackbarDuration.Long)
+            }
+            return
+        }
+        // Free tier device limit check
+        if (userTier.tier == SubscriptionTier.FREE && devices.size >= userTier.deviceLimit) {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(R.string.free_tier_device_limit_reached), duration = SnackbarDuration.Long)
             }
             return
         }
@@ -246,17 +258,30 @@ fun UsersScreen(onDeviceSelected: ((String) -> Unit)? = null) {
             )
             Spacer(Modifier.height(8.dp))
 
+            val atDeviceLimit = userTier.tier == SubscriptionTier.FREE && devices.size >= userTier.deviceLimit
             Button(
-                onClick = { showAddDialog = true },
+                onClick = { if (!atDeviceLimit) showAddDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors()
+                colors = ButtonDefaults.outlinedButtonColors(),
+                enabled = !atDeviceLimit
             ) {
                 Icon(
                     painter = ColorPainter(MaterialTheme.colorScheme.primary),
                     contentDescription = null
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Add Child Device")
+                Text(
+                    text = if (atDeviceLimit) "Upgrade to add more devices" else "Add Child Device",
+                    style = if (atDeviceLimit) MaterialTheme.typography.labelLarge.copy(color = MaterialTheme.colorScheme.error) else MaterialTheme.typography.bodyMedium
+                )
+            }
+            if (atDeviceLimit) {
+                Text(
+                    text = context.getString(R.string.free_tier_device_limit_reached),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(Modifier.height(8.dp))
             }
 
             Spacer(Modifier.height(16.dp))

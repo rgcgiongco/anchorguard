@@ -1,6 +1,11 @@
 package com.anchorguard.client.auth.data
 
-data class AuthTokensResponse(val accessToken: String, val refreshToken: String, val tokenType: String = "Bearer")
+data class AuthTokensResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val tokenType: String = "Bearer",
+    val tier: String? = null
+)
 data class LoginRequest(val email: String, val password: String)
 data class RegisterRequest(val email: String, val password: String, val name: String? = null)
 data class RefreshRequest(val refreshToken: String)
@@ -11,7 +16,8 @@ data class ParentResponse(
     val email: String,
     val name: String?,
     val emailVerified: Boolean,
-    val createdAt: String
+    val createdAt: String,
+    val tier: String? = null
 )
 
 data class DeviceRegisterRequest(

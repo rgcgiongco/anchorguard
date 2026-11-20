@@ -75,6 +75,10 @@ class UsageBatchUploadWorker(
                             Log.w(TAG, "Usage upload auth failure; clearing session handled by authenticator if applicable")
                             Result.failure()
                         }
+                        is com.anchorguard.client.network.NetworkError.TierRequired -> {
+                            Log.w(TAG, "Usage upload tier required")
+                            Result.failure()
+                        }
                         is com.anchorguard.client.network.NetworkError.Offline -> Result.retry()
                         is com.anchorguard.client.network.NetworkError.Timeout -> Result.retry()
                         is com.anchorguard.client.network.NetworkError.Server -> Result.retry()

@@ -63,6 +63,12 @@ class SecureSessionStore(context: Context) {
 
     fun parentEmail(): String? = prefs.getString(KEY_PARENT_EMAIL, null)
 
+    fun setUserTier(tier: String?) {
+        prefs.edit().putString(KEY_USER_TIER, tier).apply()
+    }
+
+    fun userTier(): String? = prefs.getString(KEY_USER_TIER, null)
+
     fun clearSession(clearPin: Boolean = false) {
         val pinKeep = if (clearPin) null else prefs.all.filterKeys { it.startsWith("pin_") || it.startsWith("lockout_") || it.startsWith("parent_pin") }
         prefs.edit().clear().apply()
@@ -99,6 +105,7 @@ class SecureSessionStore(context: Context) {
         private const val KEY_DEVICE_API_KEY = "device_api_key"
         private const val KEY_DEVICE_PAIRED = "device_paired"
     private const val KEY_PARENT_EMAIL = "parent_email"
+    private const val KEY_USER_TIER = "user_tier"
     private const val KEY_SETUP_WIZARD_COMPLETED = "setup_wizard_completed"
     private const val KEY_DEVICE_ADMIN_GRANTED = "device_admin_granted"
     private const val KEY_ACCESSIBILITY_GRANTED = "accessibility_granted"

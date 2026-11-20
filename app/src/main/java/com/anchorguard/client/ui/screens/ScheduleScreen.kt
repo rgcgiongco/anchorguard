@@ -34,10 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.anchorguard.client.R
 import com.anchorguard.client.auth.data.DevicePolicyRepository
 import com.anchorguard.client.auth.data.ScheduleResponse
 import com.anchorguard.client.auth.data.ScheduleUpdateRequest
+import com.anchorguard.client.data.local.UserRepository
 import com.anchorguard.client.enforcement.EnforcementController
+import com.anchorguard.client.model.SubscriptionTier
 import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorSectionDivider
@@ -58,6 +61,8 @@ fun ScheduleScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val config = NetworkConfig(context)
+    val userRepo = remember { UserRepository(context) }
+    val userTier by remember { mutableStateOf(userRepo.getUserTier()) }
 
     var deviceId by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -108,6 +113,13 @@ fun ScheduleScreen(onBack: () -> Unit) {
     }
 
     fun saveSchedule() {
+        // Free tier: schedules not allowed
+        if (userTier.tier == SubscriptionTier.FREE) {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(R.string.free_tier_schedules_disabled), duration = SnackbarDuration.Long)
+            }
+            return
+        }
         val device = deviceId ?: return
         isLoading = true
         scope.launch {
@@ -180,21 +192,34 @@ fun ScheduleScreen(onBack: () -> Unit) {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Switch(
-                checked = scheduleEnabled,
-                onCheckedChange = { scheduleEnabled = it }
-            )
-            Text(
-                text = "Schedule enforcement",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Enable/disable weekly allowed hours and bedtime windows.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            AnchorSectionDivider()
+            if (userTier.tier == SubscriptionTier.FREE) {
+                Text(
+                    text = context.getString(R.string.free_tier_schedules_disabled),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = context.getString(R.string.free_tier_upgrade_now),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Switch(
+                    checked = scheduleEnabled,
+                    onCheckedChange = { scheduleEnabled = it }
+                )
+                Text(
+                    text = "Schedule enforcement",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Enable/disable weekly allowed hours and bedtime windows.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                AnchorSectionDivider()
+            }
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally))
             } else {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,10 +46,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.anchorguard.client.R
 import com.anchorguard.client.auth.data.AppPolicyResponse
 import com.anchorguard.client.auth.data.DevicePolicyResponse
 import com.anchorguard.client.auth.data.DevicePolicyRepository
+import com.anchorguard.client.data.local.UserRepository
 import com.anchorguard.client.enforcement.EnforcementController
+import com.anchorguard.client.model.SubscriptionTier
 import com.anchorguard.client.network.NetworkConfig
 import com.anchorguard.client.network.NetworkResult
 import com.anchorguard.client.ui.components.AnchorSectionDivider
@@ -68,6 +72,8 @@ fun AppListScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val config = NetworkConfig(context)
+    val userRepo = remember { UserRepository(context) }
+    val userTier by remember { mutableStateOf(userRepo.getUserTier()) }
 
     var deviceId by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -100,6 +106,13 @@ fun AppListScreen(onBack: () -> Unit) {
     }
 
     fun savePolicy(app: AppInfo, isAllowed: Boolean) {
+        // Free tier: only allow blocking social media apps
+        if (userTier.tier == SubscriptionTier.FREE && app.category != "social_media") {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(R.string.free_tier_feature_locked), duration = SnackbarDuration.Long)
+            }
+            return
+        }
         scope.launch {
             val result = withContext(Dispatchers.Default) {
                 DevicePolicyRepository(context.applicationContext).updateAppPolicy(
@@ -162,6 +175,14 @@ fun AppListScreen(onBack: () -> Unit) {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (userTier.tier == SubscriptionTier.FREE) {
+                Text(
+                    text = context.getString(R.string.free_tier_social_media_only),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(Modifier.height(8.dp))
+            }
             AnchorTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -201,14 +222,25 @@ fun AppListScreen(onBack: () -> Unit) {
                     state = rememberLazyListState()
                 ) {
                     items(filteredApps, key = { it.packageName }) { app ->
+                        val isSocialMedia = app.category == "social_media"
+                        val canToggle = userTier.tier != SubscriptionTier.FREE || isSocialMedia
                         ListItem(
                             modifier = Modifier.fillMaxWidth(),
                             headlineContent = {
-                                Text(
-                                    text = app.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = app.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (userTier.tier == SubscriptionTier.FREE && !isSocialMedia) {
+                                        Text(
+                                            text = "Upgrade to block",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
                             },
                             leadingContent = {
                                 Icon(
@@ -220,8 +252,15 @@ fun AppListScreen(onBack: () -> Unit) {
                                 Switch(
                                     checked = app.isAllowed,
                                     onCheckedChange = { allowed ->
-                                        savePolicy(app, allowed)
-                                    }
+                                        if (canToggle) {
+                                            savePolicy(app, allowed)
+                                        } else {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(context.getString(R.string.free_tier_feature_locked), duration = SnackbarDuration.Long)
+                                            }
+                                        }
+                                    },
+                                    enabled = canToggle
                                 )
                             }
                         )
@@ -236,12 +275,14 @@ private fun AppPolicyResponse.toAppInfo(): AppInfo {
     return AppInfo(
         packageName = packageName,
         name = appName ?: packageName,
-        isAllowed = isAllowed
+        isAllowed = isAllowed,
+        category = category
     )
 }
 
 data class AppInfo(
     val packageName: String,
     val name: String,
-    val isAllowed: Boolean
+    val isAllowed: Boolean,
+    val category: String? = null
 )

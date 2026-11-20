@@ -14,14 +14,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.anchorguard.client.R
 import com.anchorguard.client.auth.data.AuthRepository
 import com.anchorguard.client.auth.security.PinSecurityManager
 import com.anchorguard.client.auth.security.SecureSessionStore
 import com.anchorguard.client.data.local.AnchorGuardDatabase
+import com.anchorguard.client.data.local.UserRepository
 import com.anchorguard.client.enforcement.EnforcementController
+import com.anchorguard.client.model.SubscriptionTier
 import com.anchorguard.client.network.ConnectivityState
 import com.anchorguard.client.ui.components.AnchorInfoCard
 import com.anchorguard.client.ui.components.AnchorSecondaryButton
+import com.anchorguard.client.ui.components.AnchorSectionDivider
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -37,6 +41,8 @@ fun AccountScreen(
     val db = remember(context) { AnchorGuardDatabase.getInstance(context) }
     val authRepo = remember { AuthRepository(context) }
     val session = remember { SecureSessionStore(context) }
+    val userRepo = remember { UserRepository(context) }
+    val userTier by remember { mutableStateOf(userRepo.getUserTier()) }
     val pinManager = remember { PinSecurityManager(context) }
     val statuses by db.syncStatusDao().getAll().collectAsState(initial = emptyList())
     val online by ConnectivityState.online.collectAsState()
@@ -102,6 +108,21 @@ fun AccountScreen(
             "Sign out clears parent session tokens. PIN and device pairing remain on this device unless reset separately.",
             style = MaterialTheme.typography.bodyMedium
         )
+        Spacer(Modifier.height(16.dp))
+        AnchorSectionDivider()
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Support",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(8.dp))
+        AnchorSecondaryButton(text = "Community Forum", onClick = {})
+        Spacer(Modifier.height(8.dp))
+        if (userTier.tier == SubscriptionTier.PAID) {
+            AnchorSecondaryButton(text = "Email Support", onClick = {})
+            Spacer(Modifier.height(8.dp))
+        }
     }
 }
 

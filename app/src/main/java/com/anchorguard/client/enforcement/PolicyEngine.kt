@@ -11,6 +11,14 @@ class PolicyEngine(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    private var subscriptionTier: String? = null
+
+    fun setSubscriptionTier(tier: String?) {
+        subscriptionTier = tier
+    }
+
+    private fun isFreeTier(): Boolean = subscriptionTier == "FREE"
+
     fun isAllowed(packageName: String): Boolean {
         if (packageName.isBlank()) return true
         if (packageName == OWN_PACKAGE) return true
@@ -18,7 +26,8 @@ class PolicyEngine(context: Context) {
         if (prefs.getBoolean(KEY_PARENT_MODE, false)) return true
         val blocked = prefs.getStringSet(KEY_BLOCKED_PACKAGES, emptySet()).orEmpty()
         if (packageName in blocked) return false
-        if (!isWithinAllowedHours(packageName)) return false
+        // Free tier: ignore schedule-based enforcement (manual limits only)
+        if (!isFreeTier() && !isWithinAllowedHours(packageName)) return false
         if (!isWithinDailyLimit(packageName)) return false
         return true
     }

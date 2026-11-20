@@ -1,0 +1,10 @@
+<resources>
+    <string name="free_tier_device_limit_reached">You\'ve reached the free tier limit of 1 linked device. Upgrade to add more devices.</string>
+    <string name="free_tier_feature_locked">This feature requires a paid subscription</string>
+    <string name="free_tier_upgrade_now">Upgrade Now</string>
+    <string name="free_tier_social_media_only">Free tier: Social Media blocking only</string>
+    <string name="free_tier_schedules_disabled">Scheduled limits require a paid subscription</string>
+    <string name="free_tier_email_support_unavailable">Email support is a paid feature. Visit our community forum for help.</string>
+    <string name="tier_upgrade_dialog_title">Upgrade to Paid</string>
+    <string name="tier_upgrade_dialog_message">Unlock unlimited devices, all app categories, scheduled limits, and email support.</string>
+</resources>

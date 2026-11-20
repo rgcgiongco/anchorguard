@@ -23,6 +23,7 @@ data class AppPolicyResponse(
     val deviceId: String,
     val packageName: String,
     val appName: String?,
+    val category: String? = null,
     val isAllowed: Boolean,
     val dailyLimitMinutes: Int?,
     val blockSchedule: String?,

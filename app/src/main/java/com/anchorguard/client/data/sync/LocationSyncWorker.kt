@@ -64,6 +64,10 @@ class LocationSyncWorker(
                             Log.w(TAG, "Location sync auth failure")
                             Result.failure()
                         }
+                        is com.anchorguard.client.network.NetworkError.TierRequired -> {
+                            Log.w(TAG, "Location sync tier required")
+                            Result.failure()
+                        }
                         is com.anchorguard.client.network.NetworkError.Offline,
                         is com.anchorguard.client.network.NetworkError.Timeout,
                         is com.anchorguard.client.network.NetworkError.Server,

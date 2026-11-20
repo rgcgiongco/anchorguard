@@ -6,6 +6,7 @@ sealed interface NetworkError {
     data class Auth(val code: Int? = 401, val message: String? = null) : NetworkError
     data class Server(val code: Int, val message: String? = null) : NetworkError
     data class Unknown(val message: String? = null, val cause: Throwable? = null) : NetworkError
+    data class TierRequired(val message: String? = null) : NetworkError
 
     fun userMessage(): String = when (this) {
         is Offline -> "You're offline. Changes will sync when reconnected."
@@ -13,6 +14,7 @@ sealed interface NetworkError {
         is Auth -> message?.takeIf { it.isNotBlank() } ?: "Session expired. Please sign in again."
         is Server -> message?.takeIf { it.isNotBlank() } ?: "Server error ($code). Please try again."
         is Unknown -> message?.takeIf { it.isNotBlank() } ?: "Something went wrong. Please try again."
+        is TierRequired -> message?.takeIf { it.isNotBlank() } ?: "This feature requires a paid subscription"
     }
 }
 

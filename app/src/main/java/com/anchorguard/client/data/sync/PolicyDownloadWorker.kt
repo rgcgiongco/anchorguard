@@ -49,6 +49,7 @@ class PolicyDownloadWorker(
             }
             is NetworkResult.Failure -> when (call.error) {
                 is com.anchorguard.client.network.NetworkError.Auth -> Result.failure()
+                is com.anchorguard.client.network.NetworkError.TierRequired -> Result.failure()
                 is com.anchorguard.client.network.NetworkError.Offline,
                 is com.anchorguard.client.network.NetworkError.Timeout,
                 is com.anchorguard.client.network.NetworkError.Server,

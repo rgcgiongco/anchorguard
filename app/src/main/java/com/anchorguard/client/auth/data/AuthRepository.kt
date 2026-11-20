@@ -26,6 +26,7 @@ class AuthRepository(context: Context) {
             val body = result.data
             session.setParentTokens(body.accessToken, body.refreshToken)
             session.setParentEmail(email.trim().lowercase(Locale.ROOT))
+            session.setUserTier(body.tier)
         }
         return result
     }
@@ -38,6 +39,7 @@ class AuthRepository(context: Context) {
             val body = result.data
             session.setParentTokens(body.accessToken, body.refreshToken)
             session.setParentEmail(email.trim().lowercase(Locale.ROOT))
+            session.setUserTier(body.tier)
         }
         return result
     }
@@ -51,6 +53,7 @@ class AuthRepository(context: Context) {
         }
         session.setParentTokens(null, null)
         session.setParentEmail(null)
+        session.setUserTier(null)
         return when (result) {
             is NetworkResult.Success -> NetworkResult.Success(Unit)
             is NetworkResult.Failure -> {
