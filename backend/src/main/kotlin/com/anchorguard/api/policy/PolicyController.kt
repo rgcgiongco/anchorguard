@@ -49,4 +49,8 @@ class PolicyController(private val policyService: PolicyService) {
         @PathVariable id: UUID,
         @RequestBody req: ScheduleUpdateRequest
     ): ScheduleResponse = policyService.setSchedule(principal, id, req)
+
+    @GetMapping("/allowed-categories")
+    fun getAllowedCategories(@AuthenticationPrincipal principal: AuthPrincipal, @PathVariable id: UUID): List<String> =
+        policyService.getAllowedCategories(principal.parentId)
 }

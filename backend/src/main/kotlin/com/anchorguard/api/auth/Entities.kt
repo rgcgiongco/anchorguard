@@ -15,10 +15,15 @@ class Parent(
     @Column(name = "role_id", nullable = false) var roleId: Short = 1,
     @Column(name = "created_at") var createdAt: Instant = Instant.now(),
     @Column(name = "updated_at") var updatedAt: Instant = Instant.now(),
-    @Column(name = "parent_pin_hash") var parentPinHash: String? = null
+    @Column(name = "parent_pin_hash") var parentPinHash: String? = null,
+    @Column(name = "tier", nullable = false) var tier: String = "FREE",
+    @Column(name = "device_limit", nullable = false) var deviceLimit: Int = 1,
+    @Column(name = "allow_schedules", nullable = false) var allowSchedules: Boolean = false,
+    @Column(name = "email_support", nullable = false) var emailSupport: Boolean = false
 ) {
     val isAdmin: Boolean get() = roleId == 2.toShort()
     val roleName: String get() = if (isAdmin) "admin" else "parent"
+    val isFreeTier: Boolean get() = tier == "FREE"
 }
 
 @Entity

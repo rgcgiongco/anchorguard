@@ -34,5 +34,9 @@ data class ParentResponse(
     val name: String?,
     val emailVerified: Boolean,
     val role: String,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val tier: String,
+    val deviceLimit: Int,
+    val allowSchedules: Boolean,
+    val emailSupport: Boolean
 )

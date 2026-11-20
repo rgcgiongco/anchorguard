@@ -55,6 +55,9 @@ class DeviceService(
 
     @Transactional
     fun createChild(principal: AuthPrincipal, req: DeviceCreateRequest): DeviceResponse {
+        if (!authService.canLinkDevice(principal.parentId)) {
+            throw ForbiddenException("Device limit reached for your tier. Upgrade to add more devices.")
+        }
         val now = Instant.now()
         val device = devices.save(
             Device(
@@ -78,6 +81,9 @@ class DeviceService(
 
     @Transactional
     fun pair(principal: AuthPrincipal, req: PairDeviceRequest): DeviceResponse {
+        if (!authService.canLinkDevice(principal.parentId)) {
+            throw ForbiddenException("Device limit reached for your tier. Upgrade to add more devices.")
+        }
         val code = req.pairingCode.trim().uppercase(Locale.ROOT)
         val device = devices.findByPairingCode(code) ?: throw NotFoundException("Pairing code not found")
         val expires = device.pairingExpiresAt ?: throw BadRequestException("Pairing code expired")

@@ -10,7 +10,8 @@ data class AppPolicyDto(
     val isAllowed: Boolean = true,
     val dailyLimitMinutes: Int? = null,
     val blockSchedule: JsonNode? = null,
-    val internetAccess: String = "on"
+    val internetAccess: String = "on",
+    val category: String? = null
 )
 
 data class AppPolicyResponse(
@@ -22,7 +23,8 @@ data class AppPolicyResponse(
     val dailyLimitMinutes: Int?,
     val blockSchedule: JsonNode?,
     val internetAccess: String,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    val category: String? = null
 )
 
 data class DeviceSettingsDto(

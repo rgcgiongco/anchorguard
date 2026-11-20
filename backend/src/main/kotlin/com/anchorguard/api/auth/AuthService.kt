@@ -1,6 +1,7 @@
 package com.anchorguard.api.auth
 
 import com.anchorguard.api.common.*
+import com.anchorguard.api.device.DeviceRepository
 import com.anchorguard.api.security.AuthPrincipal
 import com.anchorguard.api.security.JwtService
 import org.slf4j.LoggerFactory
@@ -14,6 +15,7 @@ import java.util.UUID
 @Service
 class AuthService(
     private val parents: ParentRepository,
+    private val devices: DeviceRepository,
     private val refreshTokens: RefreshTokenRepository,
     private val resetTokens: PasswordResetTokenRepository,
     private val passwordEncoder: PasswordEncoder,
@@ -145,6 +147,32 @@ class AuthService(
         return passwordEncoder.matches(pin, hash)
     }
 
+    fun getUserTier(userId: UUID): String {
+        val parent = parents.findById(userId).orElseThrow { NotFoundException("Account not found") }
+        return parent.tier
+    }
+
+    fun isFeatureAllowed(userId: UUID, feature: String): Boolean {
+        val parent = parents.findById(userId).orElseThrow { NotFoundException("Account not found") }
+        return when (feature) {
+            "schedules" -> parent.allowSchedules
+            "email_support" -> parent.emailSupport
+            "multi_device" -> parent.deviceLimit > 1
+            else -> true
+        }
+    }
+
+    fun getAllowedCategories(userId: UUID): List<String> {
+        val parent = parents.findById(userId).orElseThrow { NotFoundException("Account not found") }
+        return if (parent.isFreeTier) listOf("social_media") else listOf("social_media", "chat", "gaming", "learning")
+    }
+
+    fun canLinkDevice(userId: UUID): Boolean {
+        val parent = parents.findById(userId).orElseThrow { NotFoundException("Account not found") }
+        val currentCount = devices.countByParentId(parent.id)
+        return currentCount < parent.deviceLimit
+    }
+
     private fun issueTokens(parent: Parent): AuthTokensResponse {
         val access = jwtService.generateAccessToken(parent.id, parent.email, parent.roleName)
         val refresh = jwtService.generateRefreshToken(parent.id, parent.email, parent.roleName)
@@ -159,4 +187,4 @@ class AuthService(
     }
 }
 
-fun Parent.toResponse() = ParentResponse(id, email, name, emailVerified, roleName, createdAt)
+fun Parent.toResponse() = ParentResponse(id, email, name, emailVerified, roleName, createdAt, tier, deviceLimit, allowSchedules, emailSupport)

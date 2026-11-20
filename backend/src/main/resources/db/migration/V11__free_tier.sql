@@ -1,0 +1,6 @@
+-- V11: Free tier subscription fields
+ALTER TABLE parents ADD COLUMN tier VARCHAR(20) NOT NULL DEFAULT 'FREE';
+ALTER TABLE parents ADD COLUMN device_limit INT NOT NULL DEFAULT 1;
+ALTER TABLE parents ADD COLUMN allow_schedules BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE parents ADD COLUMN email_support BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_parents_tier ON parents(tier);

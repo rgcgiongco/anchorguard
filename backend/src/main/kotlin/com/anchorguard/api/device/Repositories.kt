@@ -7,6 +7,7 @@ interface DeviceRepository : JpaRepository<Device, UUID> {
     fun findByHexId(hexId: String): Device?
     fun findByPairingCode(pairingCode: String): Device?
     fun findAllByParentId(parentId: UUID): List<Device>
+    fun countByParentId(parentId: UUID): Long
     fun findByRole(role: DeviceRole): List<Device>
     fun findByParentIdAndRole(parentId: UUID, role: DeviceRole): List<Device>
 }
