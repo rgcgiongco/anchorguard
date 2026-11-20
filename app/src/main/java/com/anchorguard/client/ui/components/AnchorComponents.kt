@@ -45,7 +45,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -411,4 +414,117 @@ fun AnchorBadge(
 @Composable
 fun AnchorSectionDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(modifier = modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+}
+
+// --- Shared Device Mode Components ---
+
+/**
+ * Modal PIN entry dialog shown when switching between Parent and Child mode.
+ * Validates the entered PIN against the stored Parent PIN via a callback.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnchorParentPinDialog(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    onPinEntered: (String) -> Unit,
+    errorMessage: String? = null,
+    modifier: Modifier = Modifier
+) {
+    if (!open) return
+    var pin by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Enter Parent PIN") },
+        text = {
+            Column(modifier = Modifier.width(200.dp)) {
+                Text(text = "To switch device mode, enter your 4–6 digit Parent PIN.")
+                if (errorMessage != null) {
+                    Text(text = errorMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it },
+                    label = { Text("PIN") },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onPinEntered(pin) }) { Text(text = "Unlock") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(text = "Cancel") }
+        },
+        shape = AnchorShapes.large
+    )
+}
+
+/**
+ * Toggle chip showing the current device mode (Parent / Child).
+ * Clicking triggers onModeSwitchRequested which should open the PIN dialog.
+ */
+@Composable
+fun AnchorModeSwitch(
+    currentMode: String,
+    onModeSwitchRequested: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    val label = when (currentMode) {
+        "child" -> "Child Mode (Active)"
+        else -> "Parent Mode"
+    }
+    val selected = currentMode == "child"
+
+    FilterChip(
+        selected = selected,
+        onClick = { onModeSwitchRequested() },
+        label = { Text(text = label, style = MaterialTheme.typography.labelLarge) },
+        modifier = modifier,
+        enabled = enabled,
+        shape = AnchorShapes.medium,
+        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    )
+}
+
+/**
+ * Persistent banner shown when the device is in Child Mode.
+ * Indicates restrictions are active and offers a path to switch back.
+ */
+@Composable
+fun AnchorChildModeBanner(
+    onSwitchToParent: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = AnchorShapes.medium,
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = AnchorElevation.level1)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "\u26A0",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Child Mode Active", style = MaterialTheme.typography.bodyLarge)
+                Text(text = "App restrictions and schedules are enforced.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            AnchorPrimaryButton(text = "Switch to Parent", onClick = onSwitchToParent, enabled = true)
+        }
+    }
 }

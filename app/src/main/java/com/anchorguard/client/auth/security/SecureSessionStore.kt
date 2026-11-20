@@ -64,7 +64,7 @@ class SecureSessionStore(context: Context) {
     fun parentEmail(): String? = prefs.getString(KEY_PARENT_EMAIL, null)
 
     fun clearSession(clearPin: Boolean = false) {
-        val pinKeep = if (clearPin) null else prefs.all.filterKeys { it.startsWith("pin_") || it.startsWith("lockout_") }
+        val pinKeep = if (clearPin) null else prefs.all.filterKeys { it.startsWith("pin_") || it.startsWith("lockout_") || it.startsWith("parent_pin") }
         prefs.edit().clear().apply()
         if (!clearPin && !pinKeep.isNullOrEmpty()) {
             val e = prefs.edit()
@@ -108,6 +108,10 @@ class SecureSessionStore(context: Context) {
     private const val KEY_SETUP_MODE = "setup_mode"
     private const val KEY_SOS_ENABLED = "sos_enabled"
     private const val KEY_GEOFENCE_ENABLED = "geofence_enabled"
+    private const val KEY_DEVICE_ROLE = "device_role"
+    private const val KEY_ACTIVE_MODE = "active_mode"
+    private const val KEY_PARENT_PIN = "parent_pin"
+    private const val KEY_PARENT_PIN_SET = "parent_pin_set"
     }
 
     fun setupWizardCompleted(): Boolean = prefs.getBoolean(KEY_SETUP_WIZARD_COMPLETED, false)
@@ -166,4 +170,39 @@ class SecureSessionStore(context: Context) {
     }
 
     fun isGeofenceEnabled(): Boolean = prefs.getBoolean(KEY_GEOFENCE_ENABLED, false)
-}
+
+    // --- Shared Device Mode ---
+
+    fun setDeviceRole(role: String) {
+        prefs.edit().putString(KEY_DEVICE_ROLE, role).apply()
+    }
+
+    fun deviceRole(): String? = prefs.getString(KEY_DEVICE_ROLE, null)?.takeIf { it.isNotBlank() }
+
+    fun isBothRole(): Boolean = deviceRole() == "both"
+
+    fun setActiveMode(mode: String) {
+        prefs.edit().putString(KEY_ACTIVE_MODE, mode).apply()
+    }
+
+    fun activeMode(): String? = prefs.getString(KEY_ACTIVE_MODE, null)?.takeIf { it.isNotBlank() }
+
+    fun isChildMode(): Boolean = activeMode() == "child"
+
+    fun isParentMode(): Boolean = activeMode() == "parent" || activeMode() == null
+
+    fun setParentPin(pin: String) {
+        prefs.edit().putString(KEY_PARENT_PIN, pin).putBoolean(KEY_PARENT_PIN_SET, true).apply()
+    }
+
+    fun parentPin(): String? = prefs.getString(KEY_PARENT_PIN, null)
+
+    fun isParentPinSet(): Boolean = prefs.getBoolean(KEY_PARENT_PIN_SET, false)
+
+    fun clearSharedMode() {
+        prefs.edit()
+            .putString(KEY_ACTIVE_MODE, "parent")
+            .apply()
+    }
+
+    }

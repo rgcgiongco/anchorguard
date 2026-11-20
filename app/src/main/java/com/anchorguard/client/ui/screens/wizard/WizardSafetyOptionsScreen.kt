@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -73,8 +77,8 @@ fun WizardSafetyOptionsScreen(
 
             ExpandableHelpCard(
                 title = "Why set up safety options?",
-                initiallyExpanded = false
-            ) {
+                initiallyExpanded = false,
+                content = {
                 Column {
                     Text(
                         text = "These optional protections help keep the device safe. Parent PIN prevents unauthorized changes to settings, SOS sends an emergency alert, and Safe Zones notify you when the device enters or leaves a location. You can skip any of these and set them up later from the Parent Dashboard.",
@@ -82,7 +86,8 @@ fun WizardSafetyOptionsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
+                }
+            )
 
             // SOS section (first — most important safety feature)
             AnchorSwitch(
@@ -177,23 +182,23 @@ fun WizardSafetyOptionsScreen(
             if (pinSkippedWarning) {
                 Spacer(Modifier.height(8.dp))
                 Surface(
-                    color = MaterialTheme.colorScheme.warningContainer,
+                    color = MaterialTheme.colorScheme.errorContainer,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     shape = MaterialTheme.shapes.medium
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.filled.Warning,
-                                contentDescription = "Warning",
-                                tint = MaterialTheme.colorScheme.error,
+                            Text(
+                                text = "\u26A0",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Without a Parent PIN, anyone can change settings on this device. Set one up from the Parent Dashboard later.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onWarningContainer
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                     }

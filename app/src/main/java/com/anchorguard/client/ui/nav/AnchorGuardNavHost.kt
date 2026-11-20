@@ -46,6 +46,7 @@ import com.anchorguard.client.ui.screens.wizard.WizardPairingScreen
 import com.anchorguard.client.ui.screens.wizard.WizardParentAuthScreen
 import com.anchorguard.client.ui.screens.wizard.WizardPermissionGuideScreen
 import com.anchorguard.client.ui.screens.wizard.WizardSafetyOptionsScreen
+import com.anchorguard.client.ui.screens.mode.ModeSwitchScreen
 
 @Composable
 fun AnchorGuardNavHost(
@@ -91,32 +92,32 @@ fun AnchorGuardNavHost(
         composable(Routes.WizardEntry) {
             WizardEntryScreen(
                 onParentDevice = {
-                    val context = LocalContext.current
-                    val store = remember { SecureSessionStore(context) }
-                    store.setWizardRole("parent")
-                    store.setSetupMode("parent")
                     navController.navigate(Routes.WizardParentAuth) {
                         popUpTo(Routes.WizardEntry) { inclusive = true }
                     }
                 },
                 onChildDevice = {
-                    val context = LocalContext.current
-                    val store = remember { SecureSessionStore(context) }
-                    store.setWizardRole("child")
-                    store.setSetupMode("child_device")
                     navController.navigate(Routes.WizardChildRegister) {
                         popUpTo(Routes.WizardEntry) { inclusive = true }
                     }
                 },
                 onParentAddingChild = {
-                    val context = LocalContext.current
-                    val store = remember { SecureSessionStore(context) }
-                    store.setWizardRole("child")
-                    store.setSetupMode("parent_adding_child")
                     navController.navigate(Routes.WizardChildRegister) {
                         popUpTo(Routes.WizardEntry) { inclusive = true }
                     }
+                },
+                onBothDevices = {
+                    navController.navigate(Routes.WizardPermissions) {
+                        popUpTo(Routes.WizardEntry) { inclusive = true }
+                    }
                 }
+            )
+        }
+
+        composable(Routes.ModeSwitch) {
+            ModeSwitchScreen(
+                onBack = { navController.popBackStack() },
+                onModeChanged = { mode: String -> }
             )
         }
         composable(Routes.WizardParentAuth) {

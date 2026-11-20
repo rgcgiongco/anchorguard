@@ -77,16 +77,17 @@ fun WizardPairingScreen(
 
             ExpandableHelpCard(
                 title = "What is pairing?",
-                initiallyExpanded = false
-            ) {
-                Column {
-                    Text(
-                        text = "Pairing links this child device to your parent account so you can manage it from the Parent Dashboard. A 6-character code is generated below — enter it on your parent phone or web console, or enter it here if you're already signed in as a parent.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                initiallyExpanded = false,
+                content = {
+                    Column {
+                        Text(
+                            text = "Pairing links this child device to your parent account so you can manage it from the Parent Dashboard. A 6-character code is generated below — enter it on your parent phone or web console, or enter it here if you're already signed in as a parent.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-            }
+            )
 
             CardPairingCode(code, expiresAt)
 

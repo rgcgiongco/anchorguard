@@ -33,4 +33,5 @@ object Routes {
     const val WizardPairing = "wizard_pairing"
     const val WizardSafety = "wizard_safety"
     const val WizardComplete = "wizard_complete"
+    const val ModeSwitch = "mode_switch"
 }

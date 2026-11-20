@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -13,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -86,7 +91,7 @@ fun WizardCompleteScreen(
             // Finish-with-pending-items warning banner
             if (hasPendingItems) {
                 Surface(
-                    color = MaterialTheme.colorScheme.warningContainer,
+                    color = MaterialTheme.colorScheme.errorContainer,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     shape = MaterialTheme.shapes.medium
                 ) {
@@ -95,27 +100,27 @@ fun WizardCompleteScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         androidx.compose.foundation.layout.Row(
-                            modifier = androidx.compose.foundation.layout.Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.filled.Warning,
-                                contentDescription = "Pending items",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
+                            Text(
+                                text = "\u26A0",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.width(20.dp).height(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Some items are not yet configured. Enforcement will not work until they are set up.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onWarningContainer
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "You can finish now and complete the remaining items from the Parent Dashboard later.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onWarningContainer
+                            color = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
                 }
@@ -125,16 +130,17 @@ fun WizardCompleteScreen(
             // Expandable help card for finish-with-pending
             ExpandableHelpCard(
                 title = "What if I finish with pending items?",
-                initiallyExpanded = false
-            ) {
-                Column {
-                    Text(
-                        text = "Finishing setup saves your progress and routes you to the dashboard. If enforcement permissions or pairing are pending, AnchorGuard cannot block apps or enforce schedules until those are completed. You can return to Settings at any time to finish setup.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                initiallyExpanded = false,
+                content = {
+                    Column {
+                        Text(
+                            text = "Finishing setup saves your progress and routes you to the dashboard. If enforcement permissions or pairing are pending, AnchorGuard cannot block apps or enforce schedules until those are completed. You can return to Settings at any time to finish setup.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-            }
+            )
 
             Spacer(Modifier.height(24.dp))
 
@@ -150,16 +156,29 @@ fun WizardCompleteScreen(
             )
             Spacer(Modifier.height(8.dp))
             RowSummaryActions(onReview, onBack)
-        }
-    }
 
-    if (role != null) {
-        androidx.compose.material3.Text(
-            text = "Role: ${role.capitalize()}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
+            // Shared device mode indicator
+            if (store.isBothRole()) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Shared Device Mode",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Current mode: ${store.activeMode()?.capitalize() ?: "parent"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Switch modes anytime from the Parent Dashboard using your Parent PIN.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 

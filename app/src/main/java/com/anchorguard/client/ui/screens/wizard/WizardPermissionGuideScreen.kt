@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,8 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleEventObserver
+import kotlinx.coroutines.launch
 import com.anchorguard.client.auth.security.SecureSessionStore
 import com.anchorguard.client.enforcement.EnforcementPermissionChecker
 import com.anchorguard.client.ui.components.AnchorChip
@@ -109,17 +112,36 @@ fun WizardPermissionGuideScreen(
         subtitle = "AnchorGuard needs these system permissions to enforce app blocking, schedules, and remote lock.",
         navigationIcon = {
             IconButton(onClick = onBack) {
-                    Icon(ArrowBack, contentDescription = "Back")
+                    Text(text = "\u2190", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                 }
         }
     ) {
         WizardProgressIndicator(currentStep = currentStep, totalSteps = totalSteps)
         Spacer(Modifier.height(16.dp))
 
+        val role = store.deviceRole()
+        if (role == "both") {
+            ExpandableHelpCard(
+                title = "Shared device — Parent + Child",
+                initiallyExpanded = true,
+                content = {
+                    Column {
+                        Text(
+                            text = "This device is set up for shared use. Parent Mode gives full access to all apps. Child Mode restricts apps and schedules." + 
+                            "\n\nSwitch between modes using the Parent PIN. Enforcement only runs in Child Mode.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+
         ExpandableHelpCard(
             title = "Why these permissions matter",
-            initiallyExpanded = false
-        ) {
+            initiallyExpanded = false,
+            content = {
             Column {
                 Text(
                     text = "Without these permissions, AnchorGuard cannot block apps, enforce schedules, or remotely lock the device. Grant each permission by tapping its “Grant” button and following the system prompt.",
@@ -134,13 +156,17 @@ fun WizardPermissionGuideScreen(
                 )
             }
         }
+        )
         Spacer(Modifier.height(16.dp))
 
         PermissionCard(
             title = "Device Admin",
             description = "Enforce app blocking, remote device lock, and prevent uninstallation.",
             granted = deviceAdmin,
-            icon = if (deviceAdmin) DoneAll else Warning,
+            iconContent = {
+                    if (deviceAdmin) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                },
             onGrant = { checker.requestDeviceAdmin(); refreshKey += 1 }
         )
         Spacer(Modifier.height(12.dp))
@@ -148,7 +174,10 @@ fun WizardPermissionGuideScreen(
             title = "Accessibility Service",
             description = "Monitor foreground apps so blocked apps can be closed when they come to the front.",
             granted = accessibility,
-            icon = if (accessibility) DoneAll else Warning,
+            iconContent = {
+                    if (accessibility) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                },
             onGrant = { checker.requestAccessibility(); refreshKey += 1 }
         )
         Spacer(Modifier.height(12.dp))
@@ -156,7 +185,10 @@ fun WizardPermissionGuideScreen(
             title = "Overlay Windows",
             description = "Show the block screen when a blocked app is opened.",
             granted = overlay,
-            icon = if (overlay) DoneAll else Warning,
+            iconContent = {
+                    if (overlay) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                },
             onGrant = { checker.requestOverlay(); refreshKey += 1 }
         )
         Spacer(Modifier.height(12.dp))
@@ -164,7 +196,10 @@ fun WizardPermissionGuideScreen(
             title = "Battery Optimization",
             description = "Exempt AnchorGuard from battery restrictions so enforcement runs in the background.",
             granted = batteryOpt,
-            icon = if (batteryOpt) DoneAll else Warning,
+            iconContent = {
+                    if (batteryOpt) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                },
             onGrant = { checker.requestBatteryOptimization(); refreshKey += 1 }
         )
         Spacer(Modifier.height(24.dp))
@@ -172,7 +207,12 @@ fun WizardPermissionGuideScreen(
         AnchorPrimaryButton(
             text = "I've granted all permissions",
             onClick = {
-                if (allGranted) onAllGranted()
+                if (allGranted) {
+                    if (store.isBothRole()) {
+                        store.setActiveMode("parent")
+                    }
+                    onAllGranted()
+                }
             },
             enabled = allGranted
         )
@@ -187,7 +227,7 @@ fun WizardPermissionGuideScreen(
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Warning,
+                            imageVector = Icons.Filled.Warning,
                             contentDescription = "Warning",
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
@@ -251,7 +291,7 @@ private fun PermissionCard(
     title: String,
     description: String,
     granted: Boolean,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconContent: @Composable () -> Unit,
     onGrant: () -> Unit
 ) {
     Card(
@@ -266,12 +306,12 @@ private fun PermissionCard(
             modifier = androidx.compose.ui.Modifier.padding(12.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                modifier = androidx.compose.ui.Modifier.size(24.dp)
-            )
+            Box(
+                modifier = androidx.compose.ui.Modifier.size(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                iconContent()
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
