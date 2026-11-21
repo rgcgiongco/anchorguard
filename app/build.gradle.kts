@@ -20,6 +20,21 @@ fun releaseSigningValue(propertyName: String, envName: String): String? =
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
 
+/* ---------- Auto-incrementing version ---------- */
+val versionFile = rootProject.file("version.properties")
+val versionProps = Properties().apply {
+    if (versionFile.exists()) {
+        versionFile.inputStream().use { load(it) }
+    }
+}
+val currentVersionName = versionProps.getProperty("versionName", "0.1.0")
+val currentVersionCode = versionProps.getProperty("versionCode", "1").toInt()
+
+val versionParts = currentVersionName.split(".")
+val versionMajor = versionParts[0].toInt()
+val versionMinor = versionParts[1].toInt()
+val versionPatch = versionParts[2].toInt()
+
 android {
     namespace = "com.anchorguard.client"
     compileSdk = 36
@@ -28,8 +43,8 @@ android {
         applicationId = "com.anchorguard.client"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = currentVersionCode
+        versionName = currentVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -124,3 +139,52 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+/* ---------- Version increment task ---------- */
+tasks.register("incrementVersion") {
+    group = "versioning"
+    description = "Increments the patch version (e.g. 0.1.0 -> 0.1.1) and versionCode"
+    doLast {
+        val newPatch = versionPatch + 1
+        val newVersionName = "$versionMajor.$versionMinor.$newPatch"
+        val newVersionCode = currentVersionCode + 1
+        versionProps.setProperty("versionName", newVersionName)
+        versionProps.setProperty("versionCode", newVersionCode.toString())
+        versionFile.outputStream().use { versionProps.store(it, "Auto-incremented by AnchorGuard build") }
+        println("Version incremented: $currentVersionName -> $newVersionName (code: $currentVersionCode -> $newVersionCode)")
+    }
+}
+
+afterEvaluate {
+    tasks.findByName("assembleDebug")?.dependsOn("incrementVersion")
+    tasks.findByName("assembleRelease")?.dependsOn("incrementVersion")
+}
+
+/* ---------- Rename APK with version ---------- */
+tasks.register("renameApk") {
+    group = "versioning"
+    description = "Renames output APKs to include the version number"
+    dependsOn("assembleDebug", "assembleRelease")
+    doLast {
+        val props = Properties()
+        val vf = rootProject.file("version.properties")
+        if (vf.exists()) {
+            vf.inputStream().use { props.load(it) }
+        }
+        val versionName = props.getProperty("versionName", "0.1.0")
+
+        val apkDir = File(buildDir, "outputs/apk")
+        if (apkDir.exists()) {
+            apkDir.walkTopDown().filter { it.extension == "apk" }.forEach { apkFile ->
+                val newName = "anchorguard_$versionName.apk"
+                val newFile = File(apkFile.parentFile, newName)
+                if (apkFile.renameTo(newFile)) {
+                    println("APK renamed: ${apkFile.name} -> $newName")
+                }
+            }
+        }
+    }
+}
+
+/* To auto-rename after build, run: ./gradlew assembleDebug renameApk
+   Or add finalizedBy wiring in afterEvaluate block */
