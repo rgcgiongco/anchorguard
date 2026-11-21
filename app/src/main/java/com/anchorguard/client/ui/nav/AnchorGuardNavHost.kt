@@ -22,6 +22,7 @@ import com.anchorguard.client.ui.screens.AuthLoginScreen
 import com.anchorguard.client.ui.screens.AuthRegisterScreen
 import com.anchorguard.client.ui.screens.AuthWelcomeScreen
 import com.anchorguard.client.ui.screens.ChildHomeScreen
+import com.anchorguard.client.ui.screens.ChildSettingsScreen
 import com.anchorguard.client.ui.screens.DeviceSettingsScreen
 import com.anchorguard.client.ui.screens.PerAppLimitsScreen
 import com.anchorguard.client.ui.screens.PermissionGuideScreen
@@ -44,8 +45,15 @@ import com.anchorguard.client.ui.screens.wizard.WizardCompleteScreen
 import com.anchorguard.client.ui.screens.wizard.WizardEntryScreen
 import com.anchorguard.client.ui.screens.wizard.WizardPairingScreen
 import com.anchorguard.client.ui.screens.wizard.WizardParentAuthScreen
+import com.anchorguard.client.ui.screens.wizard.WizardParentPinScreen
+import com.anchorguard.client.ui.screens.wizard.WizardParentRegisterScreen
 import com.anchorguard.client.ui.screens.wizard.WizardPermissionGuideScreen
 import com.anchorguard.client.ui.screens.wizard.WizardSafetyOptionsScreen
+import com.anchorguard.client.ui.screens.wizard.KidWelcomeScreen
+import com.anchorguard.client.ui.screens.wizard.KidThemeSelectionScreen
+import com.anchorguard.client.ui.screens.wizard.KidPermissionsScreen
+import com.anchorguard.client.ui.screens.wizard.KidDevicePairingScreen
+import com.anchorguard.client.ui.screens.wizard.KidSetupCompleteScreen
 import com.anchorguard.client.ui.screens.mode.ModeSwitchScreen
 
 @Composable
@@ -101,13 +109,8 @@ fun AnchorGuardNavHost(
                         popUpTo(Routes.WizardEntry) { inclusive = true }
                     }
                 },
-                onParentAddingChild = {
-                    navController.navigate(Routes.WizardChildRegister) {
-                        popUpTo(Routes.WizardEntry) { inclusive = true }
-                    }
-                },
                 onBothDevices = {
-                    navController.navigate(Routes.WizardPermissions) {
+                    navController.navigate(Routes.WizardChildRegister) {
                         popUpTo(Routes.WizardEntry) { inclusive = true }
                     }
                 }
@@ -123,8 +126,38 @@ fun AnchorGuardNavHost(
         composable(Routes.WizardParentAuth) {
             WizardParentAuthScreen(
                 onAuthenticated = {
-                    navController.navigate(Routes.WizardPermissions) {
+                    navController.navigate(Routes.WizardParentPin) {
                         popUpTo(Routes.WizardParentAuth) { inclusive = true }
+                    }
+                },
+                onCreateAccount = {
+                    navController.navigate(Routes.WizardParentRegister) {
+                        popUpTo(Routes.WizardParentAuth) { inclusive = true }
+                    }
+                },
+                onForgotPassword = {
+                    // TODO: Navigate to forgot password screen
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.WizardParentRegister) {
+            WizardParentRegisterScreen(
+                onRegistered = {
+                    navController.navigate(Routes.WizardParentPin) {
+                        popUpTo(Routes.WizardParentRegister) { inclusive = true }
+                    }
+                },
+                onHaveAccount = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.WizardParentPin) {
+            WizardParentPinScreen(
+                onPinSet = {
+                    navController.navigate(Routes.WizardPermissions) {
+                        popUpTo(Routes.WizardParentPin) { inclusive = true }
                     }
                 },
                 onBack = { navController.popBackStack() }
@@ -137,6 +170,44 @@ fun AnchorGuardNavHost(
                         popUpTo(Routes.WizardChildRegister) { inclusive = true }
                     }
                 },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.KidWelcome) {
+            KidWelcomeScreen(
+                onNext = { navController.navigate(Routes.KidThemeSelection) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.KidThemeSelection) {
+            KidThemeSelectionScreen(
+                kidTheme = com.anchorguard.client.ui.theme.KidTheme.OCEAN_BLUE,
+                onThemeChanged = { /* theme persisted via ThemeSelector */ },
+                onNext = { navController.navigate(Routes.KidPermissions) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.KidPermissions) {
+            KidPermissionsScreen(
+                kidTheme = com.anchorguard.client.ui.theme.KidTheme.OCEAN_BLUE,
+                onNext = { navController.navigate(Routes.KidPairing) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.KidPairing) {
+            KidDevicePairingScreen(
+                kidTheme = com.anchorguard.client.ui.theme.KidTheme.OCEAN_BLUE,
+                onPaired = { navController.navigate(Routes.KidComplete) },
+                onSkip = { navController.navigate(Routes.KidComplete) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.KidComplete) {
+            KidSetupCompleteScreen(
+                kidTheme = com.anchorguard.client.ui.theme.KidTheme.OCEAN_BLUE,
+                onFinish = { navController.navigate(Routes.ChildHome) {
+                    popUpTo(Routes.Splash) { inclusive = true }
+                } },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -277,9 +348,32 @@ fun AnchorGuardNavHost(
             )
         }
         composable(Routes.ChildHome) {
+            val context = LocalContext.current
+            val store = remember { SecureSessionStore(context) }
+            val isShared = store.isBothRole()
+            val activeMode = store.activeMode()
             ChildHomeScreen(
                 onOpenParentGate = { navController.navigate(Routes.ParentGate) },
-                onOpenSos = { navController.navigate(Routes.Sos) }
+                onOpenSos = { navController.navigate(Routes.Sos) },
+                onOpenSettings = { navController.navigate(Routes.ChildSettings) },
+                onExitChildMode = { navController.navigate(Routes.RoleSelection) {
+                    popUpTo(Routes.RoleSelection) { inclusive = false }
+                } },
+                onSwitchToParentMode = {
+                    store.setActiveMode("parent")
+                    navController.navigate(Routes.ParentGate)
+                },
+                onSwitchToChildMode = {
+                    store.setActiveMode("child")
+                },
+                isSharedDevice = isShared,
+                isParentMode = activeMode == "parent"
+            )
+        }
+        composable(Routes.ChildSettings) {
+            ChildSettingsScreen(
+                onBack = { navController.popBackStack() },
+                onFinish = { navController.popBackStack() }
             )
         }
         composable(Routes.ParentGate) {

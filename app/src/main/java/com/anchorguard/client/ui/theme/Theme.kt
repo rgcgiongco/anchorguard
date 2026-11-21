@@ -101,6 +101,7 @@ private val DarkColorScheme = darkColorScheme(
 fun AnchorGuardTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
+    kidTheme: KidTheme = KidTheme.OCEAN_BLUE,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -109,7 +110,7 @@ fun AnchorGuardTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> getKidThemeColorScheme(kidTheme)
     }
 
     MaterialTheme(

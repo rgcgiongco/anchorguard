@@ -7,7 +7,7 @@ data class AuthTokensResponse(
     val tier: String? = null
 )
 data class LoginRequest(val email: String, val password: String)
-data class RegisterRequest(val email: String, val password: String, val name: String? = null)
+data class RegisterRequest(val email: String, val password: String? = null, val name: String? = null)
 data class RefreshRequest(val refreshToken: String)
 data class LogoutRequest(val refreshToken: String)
 

@@ -1,6 +1,5 @@
 package com.anchorguard.client.ui.screens.wizard
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -70,13 +69,34 @@ fun WizardPermissionGuideScreen(
     val checker = remember { EnforcementPermissionChecker(context) }
     val store = remember { SecureSessionStore(context) }
 
+    val deviceRole = store.deviceRole()
+    val isParentMode = deviceRole == "parent"
+    val isChildMode = deviceRole == "child"
+
     var deviceAdmin by remember { mutableStateOf(false) }
     var accessibility by remember { mutableStateOf(false) }
     var overlay by remember { mutableStateOf(false) }
     var batteryOpt by remember { mutableStateOf(false) }
+    var location by remember { mutableStateOf(false) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var skipDialogOpen by remember { mutableStateOf(false) }
     var permissionsSkipped by remember { mutableStateOf(false) }
+
+    // Auto-skip for parent mode: show compliance notice, then proceed
+    if (isParentMode) {
+        LaunchedEffect(Unit) {
+            // Small delay to show compliance notice, then auto-advance
+            scope.launch {
+                kotlinx.coroutines.delay(1500)
+                store.setDeviceAdminGranted(false)
+                store.setAccessibilityGranted(false)
+                store.setOverlayGranted(false)
+                store.setBatteryOptOut(false)
+                store.setLocationGranted(false)
+                onAllGranted()
+            }
+        }
+    }
 
     fun refreshStatus() {
         scope.launch {
@@ -84,10 +104,12 @@ fun WizardPermissionGuideScreen(
             accessibility = checker.isAccessibilityServiceEnabled()
             overlay = checker.isOverlayPermissionGranted()
             batteryOpt = checker.isBatteryOptimizationExempt()
+            location = checker.isLocationPermissionGranted()
             store.setDeviceAdminGranted(deviceAdmin)
             store.setAccessibilityGranted(accessibility)
             store.setOverlayGranted(overlay)
             store.setBatteryOptOut(batteryOpt)
+            store.setLocationGranted(location)
         }
     }
 
@@ -105,30 +127,84 @@ fun WizardPermissionGuideScreen(
         refreshStatus()
     }
 
-    val allGranted = deviceAdmin && accessibility && overlay && batteryOpt
+    val allGranted = if (isChildMode) {
+        deviceAdmin && accessibility && overlay && batteryOpt && location
+    } else {
+        deviceAdmin && accessibility && overlay && batteryOpt
+    }
 
     ScreenScaffold(
-        title = "Enforcement permissions",
-        subtitle = "AnchorGuard needs these system permissions to enforce app blocking, schedules, and remote lock.",
+        title = if (isParentMode) "Parent compliance" else "Enforcement permissions",
+        subtitle = if (isParentMode) {
+            "AnchorGuard enforcement runs only in Child Mode. Parent Mode provides management access without device-level restrictions."
+        } else if (isChildMode) {
+            "AnchorGuard needs these system permissions to enforce app blocking, schedules, and remote lock. All are required."
+        } else {
+            "AnchorGuard needs these system permissions to enforce app blocking, schedules, and remote lock."
+        },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                    Text(text = "\u2190", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                }
+                Text(text = "\u2190", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            }
         }
     ) {
         WizardProgressIndicator(currentStep = currentStep, totalSteps = totalSteps)
         Spacer(Modifier.height(16.dp))
 
-        val role = store.deviceRole()
-        if (role == "both") {
+        if (isParentMode) {
+            // Parent mode: compliance notice only
             ExpandableHelpCard(
-                title = "Shared device — Parent + Child",
+                title = "Parent Mode — Compliance Notice",
                 initiallyExpanded = true,
                 content = {
                     Column {
                         Text(
-                            text = "This device is set up for shared use. Parent Mode gives full access to all apps. Child Mode restricts apps and schedules." + 
-                            "\n\nSwitch between modes using the Parent PIN. Enforcement only runs in Child Mode.",
+                            text = "In Parent Mode, AnchorGuard does not enforce device-level restrictions. Enforcement (app blocking, schedules, remote lock) runs only in Child Mode.\n\nNo device admin, accessibility, overlay, or location permissions are required for Parent Mode.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            )
+            Spacer(Modifier.height(24.dp))
+
+            AnchorPrimaryButton(
+                text = "Continue to dashboard",
+                onClick = onAllGranted,
+                enabled = true
+            )
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onBack) { Text("Back") }
+        } else {
+            // Child or shared mode: permission cards
+            if (deviceRole == "both") {
+                ExpandableHelpCard(
+                    title = "Shared device — Parent + Child",
+                    initiallyExpanded = true,
+                    content = {
+                        Column {
+                            Text(
+                                text = "This device is set up for shared use. Parent Mode gives full access to all apps. Child Mode restricts apps and schedules.\n\nSwitch between modes using the Parent PIN. Enforcement only runs in Child Mode.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            ExpandableHelpCard(
+                title = "Why these permissions matter",
+                initiallyExpanded = false,
+                content = {
+                    Column {
+                        Text(
+                            text = if (isChildMode) {
+                                "Without these permissions, AnchorGuard cannot block apps, enforce schedules, or remotely lock the device. All permissions are mandatory for Child Mode."
+                            } else {
+                                "Without these permissions, AnchorGuard cannot block apps, enforce schedules, or remotely lock the device. Grant each permission by tapping its “Grant” button and following the system prompt."
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -136,152 +212,145 @@ fun WizardPermissionGuideScreen(
                 }
             )
             Spacer(Modifier.height(16.dp))
-        }
 
-        ExpandableHelpCard(
-            title = "Why these permissions matter",
-            initiallyExpanded = false,
-            content = {
-            Column {
-                Text(
-                    text = "Without these permissions, AnchorGuard cannot block apps, enforce schedules, or remotely lock the device. Grant each permission by tapping its “Grant” button and following the system prompt.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "You can return to this screen later from Settings if you skip now, but enforcement will not work until all permissions are granted.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        )
-        Spacer(Modifier.height(16.dp))
-
-        PermissionCard(
-            title = "Device Admin",
-            description = "Enforce app blocking, remote device lock, and prevent uninstallation.",
-            granted = deviceAdmin,
-            iconContent = {
+            PermissionCard(
+                title = "Device Admin",
+                description = "Enforce app blocking, remote device lock, and prevent uninstallation.",
+                granted = deviceAdmin,
+                iconContent = {
                     if (deviceAdmin) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                 },
-            onGrant = { checker.requestDeviceAdmin(); refreshKey += 1 }
-        )
-        Spacer(Modifier.height(12.dp))
-        PermissionCard(
-            title = "Accessibility Service",
-            description = "Monitor foreground apps so blocked apps can be closed when they come to the front.",
-            granted = accessibility,
-            iconContent = {
+                onGrant = { checker.requestDeviceAdmin(); refreshKey += 1 }
+            )
+            Spacer(Modifier.height(12.dp))
+            PermissionCard(
+                title = "Accessibility Service",
+                description = "Monitor foreground apps so blocked apps can be closed when they come to the front.",
+                granted = accessibility,
+                iconContent = {
                     if (accessibility) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                 },
-            onGrant = { checker.requestAccessibility(); refreshKey += 1 }
-        )
-        Spacer(Modifier.height(12.dp))
-        PermissionCard(
-            title = "Overlay Windows",
-            description = "Show the block screen when a blocked app is opened.",
-            granted = overlay,
-            iconContent = {
+                onGrant = { checker.requestAccessibility(); refreshKey += 1 }
+            )
+            Spacer(Modifier.height(12.dp))
+            PermissionCard(
+                title = "Overlay Windows",
+                description = "Show the block screen when a blocked app is opened.",
+                granted = overlay,
+                iconContent = {
                     if (overlay) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                 },
-            onGrant = { checker.requestOverlay(); refreshKey += 1 }
-        )
-        Spacer(Modifier.height(12.dp))
-        PermissionCard(
-            title = "Battery Optimization",
-            description = "Exempt AnchorGuard from battery restrictions so enforcement runs in the background.",
-            granted = batteryOpt,
-            iconContent = {
+                onGrant = { checker.requestOverlay(); refreshKey += 1 }
+            )
+            Spacer(Modifier.height(12.dp))
+            PermissionCard(
+                title = "Battery Optimization",
+                description = "Exempt AnchorGuard from battery restrictions so enforcement runs in the background.",
+                granted = batteryOpt,
+                iconContent = {
                     if (batteryOpt) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                 },
-            onGrant = { checker.requestBatteryOptimization(); refreshKey += 1 }
-        )
-        Spacer(Modifier.height(24.dp))
+                onGrant = { checker.requestBatteryOptimization(); refreshKey += 1 }
+            )
+            Spacer(Modifier.height(12.dp))
+            PermissionCard(
+                title = "Location",
+                description = "Enable location-based geofencing and time/place rules.",
+                granted = location,
+                iconContent = {
+                    if (location) Text(text = "\u2713", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    else Text(text = "\u26A0", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                },
+                onGrant = { checker.requestLocation(); refreshKey += 1 }
+            )
+            Spacer(Modifier.height(24.dp))
 
-        AnchorPrimaryButton(
-            text = "I've granted all permissions",
-            onClick = {
-                if (allGranted) {
-                    if (store.isBothRole()) {
-                        store.setActiveMode("parent")
+            AnchorPrimaryButton(
+                text = "I've granted all permissions",
+                onClick = {
+                    if (allGranted) {
+                        if (store.isBothRole()) {
+                            store.setActiveMode("parent")
+                        }
+                        onAllGranted()
                     }
-                    onAllGranted()
-                }
-            },
-            enabled = allGranted
-        )
-        Spacer(Modifier.height(8.dp))
-
-        if (permissionsSkipped) {
-            Surface(
-                color = MaterialTheme.colorScheme.errorContainer,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Filled.Warning,
-                            contentDescription = "Warning",
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Enforcement will not work until all permissions are granted.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
+                },
+                enabled = allGranted
+            )
             Spacer(Modifier.height(8.dp))
-        }
 
-        AnchorSecondaryButton(
-            text = "Skip permissions (not recommended)",
-            onClick = { skipDialogOpen = true },
-            enabled = !allGranted
-        )
-        Spacer(Modifier.height(8.dp))
-        AnchorSecondaryButton(text = "Back", onClick = onBack)
-
-        AlertDialog(
-            onDismissRequest = { skipDialogOpen = false },
-            title = { Text(text = "Skip permissions?") },
-            text = {
-                Text(
-                    text = "Without these permissions, AnchorGuard cannot block apps, enforce schedules, or remotely lock this device. You can grant them later from Settings."
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        permissionsSkipped = true
-                        store.setDeviceAdminGranted(false)
-                        store.setAccessibilityGranted(false)
-                        store.setOverlayGranted(false)
-                        store.setBatteryOptOut(false)
-                        skipDialogOpen = false
-                        onSkipped()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            if (permissionsSkipped) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = MaterialTheme.shapes.medium
                 ) {
-                    Text(text = "Yes, skip")
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Warning,
+                                contentDescription = "Warning",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Enforcement will not work until all permissions are granted.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { skipDialogOpen = false }) {
-                    Text(text = "Cancel")
-                }
+                Spacer(Modifier.height(8.dp))
             }
-        )
+
+            if (!isChildMode) {
+                AnchorSecondaryButton(
+                    text = "Skip permissions (not recommended)",
+                    onClick = { skipDialogOpen = true },
+                    enabled = !allGranted
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            TextButton(onClick = onBack) { Text(text = "Back") }
+
+            AlertDialog(
+                onDismissRequest = { skipDialogOpen = false },
+                title = { Text(text = "Skip permissions?") },
+                text = {
+                    Text(
+                        text = "Without these permissions, AnchorGuard cannot block apps, enforce schedules, or remotely lock this device. You can grant them later from Settings."
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            permissionsSkipped = true
+                            store.setDeviceAdminGranted(false)
+                            store.setAccessibilityGranted(false)
+                            store.setOverlayGranted(false)
+                            store.setBatteryOptOut(false)
+                            store.setLocationGranted(false)
+                            skipDialogOpen = false
+                            onSkipped()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(text = "Yes, skip")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { skipDialogOpen = false }) {
+                        Text(text = "Cancel")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -320,9 +389,9 @@ private fun PermissionCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = if (granted) "Granted" else "Pending",
+                    text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))

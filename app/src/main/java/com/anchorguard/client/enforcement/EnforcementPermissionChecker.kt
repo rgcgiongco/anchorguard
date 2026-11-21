@@ -4,10 +4,12 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.content.ContextCompat
 
 class EnforcementPermissionChecker(context: Context) {
     private val appContext = context.applicationContext
@@ -35,6 +37,16 @@ class EnforcementPermissionChecker(context: Context) {
 
     fun isBatteryOptimizationExempt(): Boolean =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) powerManager.isIgnoringBatteryOptimizations(appContext.packageName) else true
+
+    fun isLocationPermissionGranted(): Boolean =
+        ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    fun requestLocation() {
+        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        appContext.startActivity(intent)
+    }
 
     fun allPermissionsGranted(): Boolean =
         isDeviceAdminActive() && isAccessibilityServiceEnabled() && isOverlayPermissionGranted() && isBatteryOptimizationExempt()

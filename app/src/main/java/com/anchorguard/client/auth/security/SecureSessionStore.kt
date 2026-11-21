@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.anchorguard.client.data.sync.SyncPreferences
+import com.anchorguard.client.ui.theme.KidTheme
 
 /**
  * Encrypted storage for parent auth/session and device credentials.
@@ -119,6 +120,9 @@ class SecureSessionStore(context: Context) {
     private const val KEY_ACTIVE_MODE = "active_mode"
     private const val KEY_PARENT_PIN = "parent_pin"
     private const val KEY_PARENT_PIN_SET = "parent_pin_set"
+    private const val KEY_SELECTED_THEME = "selected_theme"
+    private const val KEY_SELECTED_LANGUAGE = "selected_language"
+    private const val KEY_LOCATION_GRANTED = "location_granted"
     }
 
     fun setupWizardCompleted(): Boolean = prefs.getBoolean(KEY_SETUP_WIZARD_COMPLETED, false)
@@ -210,6 +214,32 @@ class SecureSessionStore(context: Context) {
         prefs.edit()
             .putString(KEY_ACTIVE_MODE, "parent")
             .apply()
+    }
+
+    // --- Theme & Language Persistence ---
+
+    fun setSelectedTheme(themeId: String) {
+        raw().edit().putString(KEY_SELECTED_THEME, themeId).apply()
+    }
+
+    fun getSelectedTheme(): String {
+        return raw().getString(KEY_SELECTED_THEME, KidTheme.OCEAN_BLUE.id) ?: KidTheme.OCEAN_BLUE.id
+    }
+
+    fun setSelectedLanguage(languageCode: String) {
+        raw().edit().putString(KEY_SELECTED_LANGUAGE, languageCode).apply()
+    }
+
+    fun getSelectedLanguage(): String {
+        return raw().getString(KEY_SELECTED_LANGUAGE, "en") ?: "en"
+    }
+
+    fun setLocationGranted(granted: Boolean) {
+        raw().edit().putBoolean(KEY_LOCATION_GRANTED, granted).apply()
+    }
+
+    fun isLocationGranted(): Boolean {
+        return raw().getBoolean(KEY_LOCATION_GRANTED, false)
     }
 
     }

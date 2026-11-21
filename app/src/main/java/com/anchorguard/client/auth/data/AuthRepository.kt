@@ -31,6 +31,23 @@ class AuthRepository(context: Context) {
         return result
     }
 
+    /**
+     * Registers a parent account using a phone number instead of email.
+     * Used by the new WizardParentRegisterScreen for phone-based sign-up.
+     */
+    suspend fun registerWithPhone(phone: String): NetworkResult<AuthTokensResponse> {
+        val result = safeApiCall(appContext) {
+            api().register(RegisterRequest(phone.trim(), null, null))
+        }
+        if (result is NetworkResult.Success) {
+            val body = result.data
+            session.setParentTokens(body.accessToken, body.refreshToken)
+            session.setParentEmail(phone.trim())
+            session.setUserTier(body.tier)
+        }
+        return result
+    }
+
     suspend fun login(email: String, password: String): NetworkResult<AuthTokensResponse> {
         val result = safeApiCall(appContext) {
             api().login(LoginRequest(email.trim().lowercase(Locale.ROOT), password))

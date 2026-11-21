@@ -28,6 +28,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun WizardParentAuthScreen(
     onAuthenticated: () -> Unit,
+    onCreateAccount: () -> Unit,
+    onForgotPassword: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -35,15 +37,14 @@ fun WizardParentAuthScreen(
     val repo = remember { AuthRepository(context) }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var name by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
 
     val validCredentials = email.contains("@") && password.length >= 8
 
     ScreenScaffold(
-        title = "Parent account",
-        subtitle = "Sign in or create an account to manage this device."
+        title = "Parent sign in",
+        subtitle = "Sign in to manage this device."
     ) {
         OutlinedTextField(
             value = email,
@@ -59,16 +60,13 @@ fun WizardParentAuthScreen(
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Name (optional)") },
-            singleLine = true
-        )
         if (error != null) {
             Spacer(Modifier.height(8.dp))
             Text(error!!, color = MaterialTheme.colorScheme.error)
+        }
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onForgotPassword) {
+            Text(text = "Forgot password?", style = MaterialTheme.typography.labelMedium)
         }
         Spacer(Modifier.height(20.dp))
         AnchorPrimaryButton(
@@ -88,21 +86,9 @@ fun WizardParentAuthScreen(
             enabled = !busy && validCredentials
         )
         Spacer(Modifier.height(8.dp))
-        AnchorPrimaryButton(
-            text = if (busy) "Creating account…" else "Create account",
-            onClick = {
-                if (busy) return@AnchorPrimaryButton
-                error = null
-                busy = true
-                scope.launch {
-                    when (val r = repo.register(email, password, name.takeIf { it.isNotBlank() })) {
-                        is NetworkResult.Success -> onAuthenticated()
-                        is NetworkResult.Failure -> error = r.error.userMessage()
-                    }
-                    busy = false
-                }
-            },
-            enabled = !busy && validCredentials
+        AnchorSecondaryButton(
+            text = "Don't have an account? Create one",
+            onClick = onCreateAccount
         )
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onBack) { Text("Back") }
